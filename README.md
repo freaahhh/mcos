@@ -44,24 +44,26 @@ The system utilizes a relational schema including the following primary tables:
 
 ---
 
-## Installation
+## Installation (read prerequisites first)
 
-1. **Clone the Repo**:
+1. **Change directory to htdcos: (paste on cmd)**
+```bash
+cd C:\xampp\htdocs
+
+```
+
+1. **Clone the Repo: (paste on cmd)**
 ```bash
 git clone https://github.com/liyanawr/mcos.git
 
 ```
 
-
-2. **Deploy to Server**:
-Move the folder to your local server directory (e.g., `C:\xampp\htdocs\mcos`).
-
-3. **Database Import**:
+2. **Database Import**:
 * Open **phpMyAdmin**.
 * Create a database named `mcos`.
 * Import the provided `.sql` file from the `/database` folder.
 
-4. **Run**:
+3. **Run**:
 Visit `http://localhost/mcos/` in your browser.
 
 # Adjustments to be made: 
