@@ -1,6 +1,6 @@
 # 🍔 MCOS - Melati Chillz Ordering System
 
-MCOS is a full-stack PHP web application designed to streamline restaurant operations. It features a dual-interface system: a high-conversion ordering platform for **Customers** and a robust administrative dashboard for **Staff** and **Admins**. NAHH THIS IS JUST TO PASS ICT502 LESGO
+MCOS is a full-stack PHP web application designed to streamline restaurant operations. asal lulus ict jadi lah ek
 
 ## Prerequisites
 
