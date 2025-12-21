@@ -41,7 +41,7 @@
                         {
                             // Displayed when logged in
                             echo '<li><a href="myorders.php">My Orders</a></li>';
-                            echo '<li><a href="manage-profile.php">Profile</a></li>'; // Added Profile link
+                            echo '<li><a href="profile.php">Profile</a></li>'; // Added Profile link
                             echo '<li><a href="logout.php">Logout</a></li>';
                         }
                     ?>
@@ -51,4 +51,5 @@
             <div class="clearfix"></div>
         </div>
     </section>
+
 </html>
