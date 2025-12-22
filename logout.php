@@ -1,11 +1,8 @@
 <?php
-// Initialize the session
 session_start();
-
-// Unset all of the session variables
 $_SESSION = array();
 
-// If it's desired to kill the session, also delete the session cookie.
+// Delete the session cookie
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,
@@ -14,10 +11,13 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// Destroy the session.
 session_destroy();
 
-// Redirect to login page
+// Cache prevention headers to stop the "Back" button from showing old session data
+header("Cache-Control: no-cache, no-store, must-revalidate"); // HTTP 1.1
+header("Pragma: no-cache"); // HTTP 1.0
+header("Expires: 0"); // Proxies
+
 header("location: login.php");
 exit;
 ?>
