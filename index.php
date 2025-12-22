@@ -97,7 +97,7 @@
                             <p class="food-price">RM <?php echo $price; ?></p>
                             <p class="food-detail"><?php echo $description; ?></p>
                             <br>
-                            <a href="<?php echo SITEURL; ?>order.php?food_id=<?php echo $id; ?>" class="btn btn-primary">Order Now</a>
+                            <a href="food-detail.php?food_id=<?php echo $id; ?>" class="btn btn-primary">Order Now</a>
                         </div>
                     </div>
 
