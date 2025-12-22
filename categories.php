@@ -1,12 +1,19 @@
 <?php include('partials-front/menu.php'); ?>
 
+<section class="food-search text-center">
+    <div class="container">
+        <form action="<?php echo SITEURL; ?>category-search.php" method="POST">
+            <input type="search" name="search" placeholder="Search for Category.." required>
+            <input type="submit" name="submit" value="Search" class="btn btn-primary">
+        </form>
+    </div>
+</section>
 <section class="categories">
     <div class="container">
         <h2 class="text-center">Explore Foods</h2>
 
         <?php 
             // 1. Updated Table Name to 'category'
-            // Note: Removed WHERE active='Yes' because your table doesn't have an 'active' column
             $sql = "SELECT * FROM category";
 
             // Execute the Query
