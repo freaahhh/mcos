@@ -3,7 +3,7 @@
 <div class="main-content" style="background-color: #f1f2f6; padding: 3% 0;">
     <div class="wrapper" style="max-width: 1200px; margin: 0 auto;">
         
-        <h1 style="color: #2f3542; margin-bottom: 30px;">Admin Dashboard</h1>
+        <h1 style="color: #2f3542; margin-bottom: 30px;">Staff Dashboard</h1>
         
         <?php 
             if(isset($_SESSION['login'])) {
@@ -105,5 +105,6 @@
 
     </div>
 </div>
+
 
 <?php include('partials/footer.php'); ?>
