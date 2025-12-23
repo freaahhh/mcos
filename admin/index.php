@@ -77,31 +77,45 @@
         </div>
         <div style="display: flex; gap: 20px; margin-top: 30px;">
             
-            <div style="flex: 1.5; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #2f3542; font-size: 1rem;">Feedback by Category</h3>
-                <canvas id="feedbackChart" style="max-height: 250px;"></canvas>
-            </div>
+            <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 30px;">
+    <h3 style="margin-top: 0; color: #2f3542; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; margin-bottom: 25px;">
+        <span style="margin-right: 10px;">📊</span> System Report Center
+    </h3>
 
-            <div style="flex: 1; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; margin-bottom: 15px;">
-                    <h3 style="margin: 0; color: #2f3542; font-size: 1rem;">Recent Comments</h3>
-                    <a href="manage-feedback.php" style="font-size: 0.8rem; color: #3498db; text-decoration: none; font-weight: bold;">View All</a>
-                </div>
-                <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
-                    <?php 
-                        $sql_fb = "SELECT f.feedback, c.cust_username FROM feedback f 
-                                   JOIN customer c ON f.cust_id = c.cust_id 
-                                   ORDER BY f.feedback_id DESC LIMIT 5";
-                        $res_fb = mysqli_query($conn, $sql_fb);
-                        while($fb = mysqli_fetch_assoc($res_fb)):
-                    ?>
-                        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #f8f9fa;">
-                            <p style="margin: 0; font-size: 0.85rem; color: #57606f; line-height: 1.4;">"<?php echo $fb['feedback']; ?>"</p>
-                            <small style="color: #ff4757; font-weight: bold;">- <?php echo $fb['cust_username']; ?></small>
-                        </div>
-                    <?php endwhile; ?>
-                </div>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        
+        <div style="flex: 1; min-width: 250px; border: 1px solid #f1f2f6; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="display: block; color: #2f3542;">Weekly Sales Report</strong>
+                <span style="font-size: 0.8rem; color: #a4b0be;">Current week performance summary</span>
             </div>
+            <a href="print-report.php?type=weekly" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none; transition: 0.3s;">
+                <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
+            </a>
+        </div>
+
+        <div style="flex: 1; min-width: 250px; border: 1px solid #f1f2f6; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="display: block; color: #2f3542;">Monthly Revenue Audit</strong>
+                <span style="font-size: 0.8rem; color: #a4b0be;">Full breakdown of monthly transactions</span>
+            </div>
+            <a href="print-report.php?type=monthly" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none;">
+                <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
+            </a>
+        </div>
+
+        <div style="flex: 1; min-width: 250px; border: 1px solid #f1f2f6; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="display: block; color: #2f3542;">Product Insights</strong>
+                <span style="font-size: 0.8rem; color: #a4b0be;">Inventory and best-seller analytics</span>
+            </div>
+            <a href="print-report.php?type=products" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none;">
+                <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
+            </a>
+        </div>
+
+    </div>
+</div>
         </div>
 
     </div>
