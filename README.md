@@ -67,7 +67,5 @@ git clone https://github.com/liyanawr/mcos.git
 Visit `http://localhost/mcos/` in your browser.
 
 # Latest update/issue (current date: 12/12/2025)
-- major update to customer pages
-- customer ada cart (add cart to database)
-- kena tengok balik admin/staff pages
-- database (data and images/illustrations)
+- added cart mechanism
+- incomplete database (data and images/illustrations)
