@@ -1,11 +1,11 @@
 <?php
 // 1. Initialize session and output buffering
 ob_start();
-session_start(); 
+session_start();
 
 // 2. Check if the user is already logged in
-if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
-    if(isset($_SESSION["user_role"]) && $_SESSION["user_role"] === "staff") {
+if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
+    if (isset($_SESSION["user_role"]) && $_SESSION["user_role"] === "staff") {
         header("location: admin/index.php");
     } else {
         header("location: index.php");
@@ -14,97 +14,86 @@ if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
 }
 
 // 3. Include database connection
-include('config/constants.php'); 
+include('config/constants.php');
 
 $username = $password = "";
 $username_err = $password_err = $login_err = "";
 
-if($_SERVER["REQUEST_METHOD"] == "POST"){
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    if(empty(trim($_POST["username"]))){
+    if (empty(trim($_POST["username"]))) {
         $username_err = "Please enter username.";
-    } else{
+    } else {
         $username = trim($_POST["username"]);
     }
-    
-    if(empty(trim($_POST["password"]))){
+
+    if (empty(trim($_POST["password"]))) {
         $password_err = "Please enter your password.";
-    } else{
+    } else {
         $password = trim($_POST["password"]);
     }
-    
-    if(empty($username_err) && empty($password_err)){
-        
+
+    if (empty($username_err) && empty($password_err)) {
+
         // --- STEP 1: CHECK CUSTOMER TABLE ---
-        $sql_cust = "SELECT cust_id, cust_username, cust_password FROM customer WHERE cust_username = ?";
-        
-        if($stmt = mysqli_prepare($conn, $sql_cust)){
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
-            $param_username = $username;
-            
-            if(mysqli_stmt_execute($stmt)){
-                mysqli_stmt_store_result($stmt);
-                
-                if(mysqli_stmt_num_rows($stmt) == 1){                    
-                    mysqli_stmt_bind_result($stmt, $id, $db_username, $db_password);
-                    if(mysqli_stmt_fetch($stmt)){
-                        if($password === $db_password){
-                            $_SESSION["loggedin"] = true;
-                            $_SESSION["u_id"] = $id;
-                            $_SESSION["username"] = $db_username;
-                            $_SESSION["user_role"] = "customer"; 
-                            
-                            header("location: index.php");
-                            exit;
-                        }
-                    }
-                }
-            }
-            mysqli_stmt_close($stmt);
-        }
+        $sql_cust = "SELECT CUST_ID, CUST_USERNAME, CUST_PASSWORD FROM CUSTOMER WHERE CUST_USERNAME = :username";
+        $stid = oci_parse($conn, $sql_cust);
+        oci_bind_by_name($stid, ":username", $username);
+        oci_execute($stid);
 
-        // --- STEP 2: CHECK STAFF TABLE (If Customer check didn't redirect) ---
-        $sql_staff = "SELECT staff_ID, staff_username, staff_password FROM STAFF WHERE staff_username = ?";
-        
-        if($stmt = mysqli_prepare($conn, $sql_staff)){
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
-            $param_username = $username;
-            
-            if(mysqli_stmt_execute($stmt)){
-                mysqli_stmt_store_result($stmt);
-                
-                if(mysqli_stmt_num_rows($stmt) == 1){                    
-                    mysqli_stmt_bind_result($stmt, $id, $db_username, $db_password);
-                    if(mysqli_stmt_fetch($stmt)){
-                        if($password === $db_password){
-                            $_SESSION["loggedin"] = true;
-                            $_SESSION["u_id"] = $id;
-                            $_SESSION["username"] = $db_username;
-                            $_SESSION["user_role"] = "staff"; 
-                            
-                            header("location: admin/index.php");
-                            exit;
-                        }
-                    }
-                }
-            }
-            mysqli_stmt_close($stmt);
-        }
+        // CORRECTED: Use oci_fetch_array with OCI_ASSOC
+        $row = oci_fetch_array($stid, OCI_ASSOC);
 
-        // If neither table matched
+        if ($row) {
+            // Oracle returns keys in UPPERCASE
+            if ($password === $row['CUST_PASSWORD']) {
+                $_SESSION["loggedin"] = true;
+                $_SESSION["u_id"] = $row['CUST_ID'];
+                $_SESSION["username"] = $row['CUST_USERNAME'];
+                $_SESSION["user_role"] = "customer";
+
+                header("location: index.php");
+                exit;
+            }
+        }
+        oci_free_statement($stid);
+
+        // --- STEP 2: CHECK STAFF TABLE ---
+        $sql_staff = "SELECT STAFF_ID, STAFF_USERNAME, STAFF_PASSWORD FROM STAFF WHERE STAFF_USERNAME = :username";
+        $stid = oci_parse($conn, $sql_staff);
+        oci_bind_by_name($stid, ":username", $username);
+        oci_execute($stid);
+
+        $row = oci_fetch_array($stid, OCI_ASSOC);
+
+        if ($row) {
+            if ($password === $row['STAFF_PASSWORD']) {
+                $_SESSION["loggedin"] = true;
+                $_SESSION["u_id"] = $row['STAFF_ID'];
+                $_SESSION["username"] = $row['STAFF_USERNAME'];
+                $_SESSION["user_role"] = "staff";
+
+                header("location: admin/index.php");
+                exit;
+            }
+        }
+        oci_free_statement($stid);
+
         $login_err = "Invalid username or password.";
     }
-    mysqli_close($conn);
+    // Note: Do not close $conn here if you use it in included files later, 
+    // but usually it's fine at the end of the script.
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant Website</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous"> 
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -126,10 +115,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             <h2>Login</h2>
             <p>Please fill in your credentials to login.</p>
 
-            <?php 
-            if(!empty($login_err)){
+            <?php
+            if (!empty($login_err)) {
                 echo '<div class="alert alert-danger">' . $login_err . '</div>';
-            }         
+            }
             ?>
 
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
@@ -137,7 +126,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                     <label>Username</label>
                     <input type="text" name="username" class="form-control <?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $username; ?>">
                     <span class="invalid-feedback"><?php echo $username_err; ?></span>
-                </div>    
+                </div>
                 <div class="form-group">
                     <label>Password</label>
                     <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>">
@@ -152,4 +141,5 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     </div>
     <?php include('partials-front/footer.php'); ?>
 </body>
+
 </html>

@@ -8,64 +8,56 @@
         </form>
     </div>
 </section>
+
 <section class="categories">
     <div class="container">
         <h2 class="text-center">Explore Foods</h2>
 
-        <?php 
-            // 1. Updated Table Name to 'category'
-            $sql = "SELECT * FROM category";
+        <?php
+        // --- Oracle Query ---
+        $sql = "SELECT * FROM CATEGORY";
+        $stid = oci_parse($conn, $sql);
+        oci_execute($stid);
 
-            // Execute the Query
-            $res = mysqli_query($conn, $sql);
+        $categories = [];
+        while ($row = oci_fetch_assoc($stid)) {
+            $categories[] = $row;
+        }
+        oci_free_statement($stid);
 
-            // Count Rows
-            $count = mysqli_num_rows($res);
+        $count = count($categories);
 
-            // Check whether categories available or not
-            if($count > 0)
-            {
-                // Categories Available
-                while($row = mysqli_fetch_assoc($res))
-                {
-                    // 2. Map variables to your specific database columns
-                    $id = $row['category_ID'];
-                    $title = $row['category_details']; // Using details as the title
-                    $image_name = $row['category_pict'];
-                    ?>
-                    
-                    <a href="<?php echo SITEURL; ?>category-foods.php?category_id=<?php echo $id; ?>">
-                        <div class="box-3 float-container">
-                            <?php 
-                                if($image_name == "")
-                                {
-                                    // Image not Available
-                                    echo "<div class='error'>Image not found.</div>";
-                                }
-                                else
-                                {
-                                    // Image Available
-                                    ?>
-                                    <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
-                                    <?php
-                                }
-                            ?>
-                            
-                            <h3 class="float-text text-white"><?php echo $title; ?></h3>
-                        </div>
-                    </a>
+        if ($count > 0) {
+            foreach ($categories as $row) {
+                $id = $row['CATEGORY_ID'];
+                $title = $row['CATEGORY_DETAILS']; // Oracle columns uppercase
+                $image_name = $row['CATEGORY_PICT'];
+        ?>
 
-                    <?php
-                }
+                <a href="<?php echo SITEURL; ?>category-foods.php?category_id=<?php echo $id; ?>">
+                    <div class="box-3 float-container">
+                        <?php
+                        if (empty($image_name)) {
+                            echo "<div class='error'>Image not found.</div>";
+                        } else {
+                        ?>
+                            <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
+                        <?php
+                        }
+                        ?>
+                        <h3 class="float-text text-white"><?php echo $title; ?></h3>
+                    </div>
+                </a>
+
+        <?php
             }
-            else
-            {
-                // Categories Not Available
-                echo "<div class='error'>Category not found.</div>";
-            }
+        } else {
+            echo "<div class='error'>Category not found.</div>";
+        }
         ?>
 
         <div class="clearfix"></div>
     </div>
 </section>
+
 <?php include('partials-front/footer.php'); ?>

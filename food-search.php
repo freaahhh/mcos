@@ -2,91 +2,93 @@
 
 <section class="food-search text-center">
     <div class="container">
-        <?php 
-            // Get the Search Keyword safely
-            // Check if search exists to avoid errors on direct page access
-            $search = isset($_POST['search']) ? mysqli_real_escape_string($conn, $_POST['search']) : "";
+        <?php
+        // Ambil search keyword
+        $search = isset($_POST['search']) ? trim($_POST['search']) : "";
         ?>
-
-        <h2>Foods on Your Search <a href="#" class="text-white">"<?php echo $search; ?>"</a></h2>
-
+        <h2>Foods on Your Search <a href="#" class="text-white">"<?php echo htmlspecialchars($search); ?>"</a></h2>
     </div>
 </section>
+
 <section class="food-menu">
     <div class="container">
         <h2 class="text-center">Food Menu</h2>
 
-        <?php 
-            // SQL Query to Get foods based on search keyword from your 'menu' table
-            // We use your specific columns: menu_name and menu_details
-            $sql = "SELECT * FROM menu 
-                    WHERE menu_name LIKE '%$search%' 
-                    OR menu_details LIKE '%$search%' 
-                    AND menu_availability = 1"; // Only show items available for order
+        <?php
+        if ($search != "") {
+            // FIX 1: SQL Case Insensitive (Guna UPPER)
+            // Oracle ni sensitif. 'Burger' tak sama dengan 'burger'.
+            // Kita tukar dua-dua jadi UPPER supaya search lebih power.
+            $sql = "SELECT * FROM MENU 
+                    WHERE (UPPER(MENU_NAME) LIKE UPPER(:search) OR UPPER(MENU_DETAILS) LIKE UPPER(:search)) 
+                    AND MENU_AVAILABILITY = '1'";
 
-            // Execute the Query
-            $res = mysqli_query($conn, $sql);
+            $stid = oci_parse($conn, $sql);
 
-            // Count Rows
-            $count = mysqli_num_rows($res);
+            // Masukkan % siap-siap
+            $like_search = "%" . $search . "%";
+            oci_bind_by_name($stid, ":search", $like_search);
 
-            // Check whether food available or not
-            if($count > 0)
-            {
-                // Food Available
-                while($row = mysqli_fetch_assoc($res))
-                {
-                    // Get the details using your specific database attributes
-                    $id = $row['menu_ID'];
-                    $title = $row['menu_name'];
-                    $price = $row['menu_price'];
-                    $description = $row['menu_details'];
-                    $image_name = $row['menu_pict'];
-                    ?>
+            oci_execute($stid);
 
-                    <div class="food-menu-box">
-                        <div class="food-menu-img">
-                            <?php 
-                                // Check whether image name is available or not
-                                if($image_name == "")
-                                {
-                                    // Image not Available
-                                    echo "<div class='error'>Image not Available.</div>";
-                                }
-                                else
-                                {
-                                    // Image Available
-                                    ?>
-                                    <img src="<?php echo SITEURL; ?>images/food/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
-                                    <?php 
-                                }
-                            ?>
-                        </div>
+            $found = false;
 
-                        <div class="food-menu-desc">
-                            <h4><?php echo $title; ?></h4>
-                            <p class="food-price">RM <?php echo number_format($price, 2); ?></p>
-                            <p class="food-detail">
-                                <?php echo $description; ?>
-                            </p>
-                            <br>
+            // FIX 2: Tambah 'OCI_RETURN_LOBS + OCI_RETURN_NULLS'
+            // Wajib ada supaya tak error bila jumpa Description kosong
+            while ($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_LOBS + OCI_RETURN_NULLS)) {
+                $found = true;
 
-                            <a href="food-detail.php?food_id=<?php echo $id; ?>" class="btn btn-primary">Order Now</a>
-                        </div>
+                $id = $row['MENU_ID'];
+                $title = $row['MENU_NAME'];
+                $price = $row['MENU_PRICE'];
+                $image_name = $row['MENU_PICT'];
+
+                // FIX 3: Handle Description NULL
+                $description = isset($row['MENU_DETAILS']) ? $row['MENU_DETAILS'] : "No description available.";
+        ?>
+                <div class="food-menu-box">
+                    <div class="food-menu-img">
+                        <?php
+                        if ($image_name == "" || is_null($image_name)) {
+                            echo "<div class='error'>Image not Available.</div>";
+                        } else {
+                            // Check path images/food/ atau images/
+                        ?>
+                            <img src="<?php echo SITEURL; ?>images/food/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
+                        <?php } ?>
                     </div>
 
-                    <?php
-                }
+                    <div class="food-menu-desc">
+                        <h4><?php echo $title; ?></h4>
+                        <p class="food-price">RM <?php echo number_format($price, 2); ?></p>
+                        <p class="food-detail">
+                            <?php echo $description; ?>
+                        </p>
+                        <br>
+
+                        <form action="add-to-cart.php" method="POST">
+                            <input type="hidden" name="menu_id" value="<?php echo $id; ?>">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Cart</button>
+                        </form>
+
+                    </div>
+                </div>
+        <?php
             }
-            else
-            {
-                // Food Not Available
+
+            if (!$found) {
                 echo "<div class='error text-center'>Food not found for this search.</div>";
             }
+
+            oci_free_statement($stid);
+        } else {
+            echo "<div class='error text-center'>Please enter a search keyword.</div>";
+        }
         ?>
 
         <div class="clearfix"></div>
-
     </div>
 </section>
+
 <?php include('partials-front/footer.php'); ?>

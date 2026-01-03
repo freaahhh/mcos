@@ -1,103 +1,132 @@
-<?php include('partials-front/menu.php'); ?>
+<?php
+include('partials-front/menu.php');
 
-<div class="main-content" style="background-color: #f1f2f6; padding: 3% 0;">
-    <div class="container">
-        <div class="feedback-box" style="background-color: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto;">
-            
-            <h1 class="text-center" style="margin-bottom: 10px; color: #2f3542;">Order Feedback</h1>
-            
-            <?php 
-                if(isset($_GET['id'])) {
-                    $order_id = $_GET['id'];
-                    $cust_id = $_SESSION['u_id'];
-                } else {
-                    header('location:'.SITEURL.'myorders.php');
-                    exit();
-                }
+// Check Login & URL
+if (!isset($_SESSION['u_id'])) {
+    header('location:login.php');
+    exit;
+}
+if (!isset($_GET['id'])) {
+    header('location:myorders.php');
+    exit;
+}
 
-                // 1. CHECK IF FEEDBACK ALREADY EXISTS
-                $sql_check = "SELECT * FROM FEEDBACK WHERE order_ID = $order_id";
-                $res_check = mysqli_query($conn, $sql_check);
-                $already_submitted = mysqli_num_rows($res_check) > 0;
+$order_id = $_GET['id'];
+$cust_id = $_SESSION['u_id'];
 
-                // Handle Form Submission
-                if(isset($_POST['submit_feedback']) && !$already_submitted) {
-                    $feedback_text = mysqli_real_escape_string($conn, $_POST['feedback_text']);
-                    $feedback_cat = $_POST['feedback_cat'];
-                    
-                    // Insert with order_ID
-                    $sql_fb = "INSERT INTO FEEDBACK (feedback, cust_ID, order_ID, feedback_cat_ID) 
-                               VALUES ('$feedback_text', $cust_id, $order_id, $feedback_cat)";
-                    
-                    if(mysqli_query($conn, $sql_fb)) {
-                        echo "<div class='alert alert-success text-center' style='color: green; padding: 10px; background: #e6f9ed; border-radius: 5px;'>Thank you! Your feedback has been submitted.</div>";
-                        $already_submitted = true; // Hide form after submission
-                    } else {
-                        echo "<div class='alert alert-danger'>Error: " . mysqli_error($conn) . "</div>";
-                    }
-                }
-            ?>
+// --- CHECK: Dah pernah submit ke belum? ---
+$sql_check = "SELECT * FROM FEEDBACK WHERE ORDER_ID = :order_id";
+$stid_check = oci_parse($conn, $sql_check);
+oci_bind_by_name($stid_check, ":order_id", $order_id);
+oci_execute($stid_check);
 
-            <p class="text-center" style="color: #747d8c; margin-bottom: 30px;">Order ID: #<?php echo $order_id; ?></p>
+// Kalau jumpa row, maksudnya dah submit
+$already_submitted = oci_fetch_assoc($stid_check) ? true : false;
+oci_free_statement($stid_check);
 
-            <?php if($already_submitted): ?>
-                <div style="text-align: center; padding: 40px;">
-                    <div style="font-size: 50px; margin-bottom: 10px;">✅</div>
-                    <h3 style="color: #2f3542;">Feedback Already Received</h3>
-                    <p style="color: #747d8c;">You have already submitted feedback for this order. Thank you for your input!</p>
+// --- HANDLE SUBMIT ---
+if (isset($_POST['submit_feedback']) && !$already_submitted) {
+    $feedback_text = $_POST['feedback_text'];
+    $feedback_cat = $_POST['feedback_cat'];
+    //$rating = $_POST['rating'];
+
+    // Insert (Tanpa MENU_ID)
+    $sql_fb = "INSERT INTO FEEDBACK (FEEDBACK, CUST_ID, ORDER_ID, FEEDBACK_CAT_ID) 
+               VALUES (:feedback, :cust_id, :order_id, :feedback_cat)";
+
+    $stid_fb = oci_parse($conn, $sql_fb);
+    oci_bind_by_name($stid_fb, ":feedback", $feedback_text);
+    oci_bind_by_name($stid_fb, ":cust_id", $cust_id);
+    oci_bind_by_name($stid_fb, ":order_id", $order_id);
+    oci_bind_by_name($stid_fb, ":feedback_cat", $feedback_cat);
+    //oci_bind_by_name($stid_fb, ":rating", $rating);
+
+    if (oci_execute($stid_fb)) {
+        // Refresh page supaya nampak success message
+        header("Refresh:0");
+    } else {
+        $e = oci_error($stid_fb);
+        echo "<script>alert('Error: " . $e['message'] . "');</script>";
+    }
+    oci_free_statement($stid_fb);
+}
+
+// --- FETCH ITEMS (Untuk Display Sahaja) ---
+$sql_items = "SELECT m.MENU_NAME 
+              FROM ORDER_MENU om 
+              JOIN MENU m ON om.MENU_ID = m.MENU_ID 
+              WHERE om.ORDER_ID = :order_id";
+$stid_items = oci_parse($conn, $sql_items);
+oci_bind_by_name($stid_items, ":order_id", $order_id);
+oci_execute($stid_items);
+
+// --- FETCH CATEGORIES ---
+$sql_cat = "SELECT * FROM FEEDBACK_CATEGORY";
+$stid_cat = oci_parse($conn, $sql_cat);
+oci_execute($stid_cat);
+?>
+
+<div class="main-content" style="background-color: #f1f2f6; padding: 50px 0;">
+    <div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 20px;">
+
+        <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h2 class="text-center" style="margin-bottom: 20px; color: #2f3542;">Order Feedback</h2>
+            <p class="text-center" style="color: #747d8c; margin-bottom: 30px;">Order ID: <strong>#<?php echo $order_id; ?></strong></p>
+
+            <?php if ($already_submitted): ?>
+
+                <div style="text-align: center; padding: 30px; background: #e3fff3; border-radius: 10px;">
+                    <h1 style="font-size: 3rem; margin-bottom: 10px;">✅</h1>
+                    <h3 style="color: #27ae60;">Thank You!</h3>
+                    <p style="color: #57606f;">We have received your feedback for this order.</p>
                     <br>
-                    <a href="myorders.php" class="btn-primary" style="padding: 10px 25px; text-decoration: none; border-radius: 5px; background-color: #3742fa; color: white;">View My Orders</a>
+                    <a href="myorders.php" class="btn-primary" style="background: #2f3542; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Back to Orders</a>
                 </div>
+
             <?php else: ?>
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
-                    <h4 style="margin-bottom: 10px; color: #57606f;">Items from this order:</h4>
-                    <ul style="list-style: none; padding: 0;">
-                        <?php 
-                            $sql_items = "SELECT m.menu_name FROM ORDER_MENU om 
-                                          JOIN MENU m ON om.menu_ID = m.menu_ID 
-                                          WHERE om.order_ID = $order_id";
-                            $res_items = mysqli_query($conn, $sql_items);
-                            while($item = mysqli_fetch_assoc($res_items)) {
-                                echo "<li style='padding: 5px 0; border-bottom: 1px solid #ddd;'>• ".$item['menu_name']."</li>";
-                            }
-                        ?>
+
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <strong style="display:block; margin-bottom: 10px;">Items in this order:</strong>
+                    <ul style="padding-left: 20px; color: #57606f;">
+                        <?php while ($row = oci_fetch_assoc($stid_items)): ?>
+                            <li><?php echo $row['MENU_NAME']; ?></li>
+                        <?php endwhile; ?>
                     </ul>
                 </div>
 
                 <form action="" method="POST">
+                    <!-- takde dlm db
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Feedback Category</label>
-                        <select name="feedback_cat" class="form-control" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ced4da;" required>
-                            <?php 
-                                $sql_cat = "SELECT * FROM FEEDBACK_CATEGORY";
-                                $res_cat = mysqli_query($conn, $sql_cat);
-                                while($cat = mysqli_fetch_assoc($res_cat)) {
-                                    echo "<option value='".$cat['feedback_cat_ID']."'>".$cat['feedback_cat_name']."</option>";
-                                }
-                            ?>
+                        <label style="font-weight: bold;">Rating</label>
+                        <select name="rating" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                            <option value="4">⭐⭐⭐⭐ Good</option>
+                            <option value="3">⭐⭐⭐ Average</option>
+                            <option value="2">⭐⭐ Poor</option>
+                            <option value="1">⭐ Very Bad</option>
+                        </select>
+                    </div>
+                    -->
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-weight: bold;">Category</label>
+                        <select name="feedback_cat" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <?php while ($cat = oci_fetch_assoc($stid_cat)): ?>
+                                <option value="<?php echo $cat['FEEDBACK_CAT_ID']; ?>"><?php echo $cat['FEEDBACK_CAT_NAME']; ?></option>
+                            <?php endwhile; ?>
                         </select>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Rating</label>
-                        <select name="rating" class="form-control" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ced4da;">
-                            <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
-                            <option value="4">⭐⭐⭐⭐ (Good)</option>
-                            <option value="3">⭐⭐⭐ (Average)</option>
-                            <option value="2">⭐⭐ (Poor)</option>
-                            <option value="1">⭐ (Very Bad)</option>
-                        </select>
+                        <label style="font-weight: bold;">Comments</label>
+                        <textarea name="feedback_text" rows="5" required placeholder="Describe your experience..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Your Comments</label>
-                        <textarea name="feedback_text" rows="5" class="form-control" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ced4da;" placeholder="How was your food and delivery experience?" required></textarea>
+                    <div style="text-align: center;">
+                        <a href="order-details.php?id=<?php echo $order_id; ?>" style="color: #747d8c; text-decoration: none; margin-right: 20px;">Cancel</a>
+                        <button type="submit" name="submit_feedback" class="btn-primary" style="background: #ff4757; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Submit Feedback</button>
                     </div>
 
-                    <div class="text-center" style="margin-top: 30px;">
-                        <a href="order-details.php?id=<?php echo $order_id; ?>" class="btn-secondary" style="padding: 10px 25px; text-decoration: none; border-radius: 5px; background-color: #747d8c; color: white; margin-right: 10px;">Return</a>
-                        <button type="submit" name="submit_feedback" class="btn-primary" style="padding: 10px 25px; border: none; border-radius: 5px; background-color: #2ecc71; color: white; cursor: pointer;">Submit Feedback</button>
-                    </div>
                 </form>
             <?php endif; ?>
         </div>

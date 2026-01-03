@@ -1,0 +1,198 @@
+<?php include('partials-front/menu.php'); ?>
+
+<section class="food-search text-center">
+    <div class="container">
+        <form action="<?php echo SITEURL; ?>food-search.php" method="POST">
+            <input type="search" name="search" placeholder="Search for Food.." required>
+            <input type="submit" name="submit" value="Search" class="btn btn-primary">
+        </form>
+    </div>
+</section>
+
+<?php
+if (isset($_SESSION['order'])) {
+    echo $_SESSION['order'];
+    unset($_SESSION['order']);
+}
+?>
+
+<section class="categories">
+    <div class="container">
+        <h2 class="text-center">Explore Foods</h2>
+
+        <?php
+        // 1. Fetch 3 Random Categories
+        // Pastikan nama table CATEGORY (Huruf Besar kalau perlu)
+        $sql = "SELECT * FROM (SELECT * FROM CATEGORY ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM <= 3";
+        $stid = oci_parse($conn, $sql);
+        oci_execute($stid);
+
+        $has_rows = false;
+
+        // 2. FIX: Tambah OCI_RETURN_NULLS untuk safety
+        while ($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
+            $has_rows = true;
+            $id = $row['CATEGORY_ID'];
+
+            $title = isset($row['CATEGORY_DETAILS']) ? $row['CATEGORY_DETAILS'] : "Category";
+
+            $image_name = $row['CATEGORY_PICT'];
+        ?>
+
+            <a href="<?php echo SITEURL; ?>category-foods.php?category_id=<?php echo $id; ?>">
+                <div class="box-3 float-container">
+                    <?php
+                    if ($image_name == "" || is_null($image_name)) {
+                        echo "<div class='error'>Image not Available</div>";
+                    } else {
+                        // Check path images/category/ atau images/
+                    ?>
+                        <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
+                    <?php
+                    }
+                    ?>
+                    <h3 class="float-text text-white"><?php echo $title; ?></h3>
+                </div>
+            </a>
+
+        <?php
+        }
+
+        if (!$has_rows) {
+            echo "<div class='error'>Category not Added.</div>";
+        }
+        oci_free_statement($stid);
+        ?>
+        <div class="clearfix"></div>
+    </div>
+</section>
+
+<section class="food-menu">
+    <div class="container">
+        <h2 class="text-center">Featured Foods</h2>
+
+        <?php
+        // 3. Fetch 6 Random Menu Items
+        $sql2 = "SELECT * FROM (SELECT * FROM MENU WHERE MENU_AVAILABILITY='1' ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM <= 6";
+        $stid2 = oci_parse($conn, $sql2);
+        oci_execute($stid2);
+
+        $has_rows2 = false;
+
+        // 4. FIX: Tambah 'OCI_RETURN_LOBS + OCI_RETURN_NULLS' (Wajib!)
+        while ($row = oci_fetch_array($stid2, OCI_ASSOC + OCI_RETURN_LOBS + OCI_RETURN_NULLS)) {
+            $has_rows2 = true;
+            $id = $row['MENU_ID'];
+            $title = $row['MENU_NAME'];
+            $price = $row['MENU_PRICE'];
+            $image_name = $row['MENU_PICT'];
+
+            // Handle Description NULL
+            $description = isset($row['MENU_DETAILS']) ? $row['MENU_DETAILS'] : "No description available.";
+        ?>
+
+            <div class="food-menu-box">
+                <div class="food-menu-img">
+                    <?php
+                    if ($image_name == "" || is_null($image_name)) {
+                        echo "<div class='error'>Image not available.</div>";
+                    } else {
+                        // NOTE: Kalau gambar tak keluar, buang '/food' jadi 'images/'
+                    ?>
+                        <img src="<?php echo SITEURL; ?>images/food/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
+                    <?php
+                    }
+                    ?>
+                </div>
+
+                <div class="food-menu-desc">
+                    <h4><?php echo $title; ?></h4>
+                    <p class="food-price">RM <?php echo number_format($price, 2); ?></p>
+                    <p class="food-detail">
+                        <?php echo $description; ?>
+                    </p>
+                    <br>
+
+                    <form action="add-to-cart.php" method="POST">
+                        <input type="hidden" name="menu_id" value="<?php echo $id; ?>">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Cart</button>
+                    </form>
+
+                </div>
+            </div>
+
+        <?php
+        }
+
+        if (!$has_rows2) {
+            echo "<div class='error'>Food not available.</div>";
+        }
+        oci_free_statement($stid2);
+        ?>
+        <div class="clearfix"></div>
+    </div>
+
+    <p class="text-center">
+        <a href="<?php echo SITEURL; ?>foods.php">See All Foods</a>
+    </p>
+</section>
+
+
+
+<section class="categories" style="background-color: #f1f2f6; padding: 50px 0;">
+    <div class="container">
+        <h2 class="text-center" style="margin-bottom: 40px; color: #2f3542;">What Our Customers Say</h2>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;">
+
+            <?php
+            // 1. SQL untuk tarik feedback, nama customer, dan kategori
+            // Kita guna ROWNUM <= 3 untuk ambil 3 teratas sahaja (Oracle Style)
+            $sql_review = "SELECT * FROM (
+                                SELECT f.FEEDBACK, c.CUST_FIRST_NAME, cat.FEEDBACK_CAT_NAME
+                                FROM FEEDBACK f
+                                JOIN CUSTOMER c ON f.CUST_ID = c.CUST_ID
+                                JOIN FEEDBACK_CATEGORY cat ON f.FEEDBACK_CAT_ID = cat.FEEDBACK_CAT_ID
+                                ORDER BY f.FEEDBACK_ID DESC
+                           ) WHERE ROWNUM <= 3";
+
+            $stid_review = oci_parse($conn, $sql_review);
+            oci_execute($stid_review);
+
+            $count_review = 0;
+
+            while ($review = oci_fetch_assoc($stid_review)) {
+                $count_review++;
+            ?>
+
+                <div style="background: white; padding: 30px; border-radius: 15px; width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); position: relative;">
+
+                    <div style="font-size: 40px; color: #ff6b81; position: absolute; top: -20px; left: 20px;">❝</div>
+
+                    <p style="color: #57606f; font-style: italic; line-height: 1.6; margin-top: 15px; min-height: 80px;">
+                        "<?php echo $review['FEEDBACK']; ?>"
+                    </p>
+
+                    <div style="margin-top: 20px; border-top: 1px solid #f1f2f6; padding-top: 15px;">
+                        <h4 style="margin: 0; color: #2f3542;"><?php echo $review['CUST_FIRST_NAME']; ?></h4>
+                        <span style="font-size: 0.8rem; color: #ff4757; background: #ffeaa7; padding: 2px 8px; border-radius: 4px;">
+                            <?php echo $review['FEEDBACK_CAT_NAME']; ?>
+                        </span>
+                    </div>
+                </div>
+
+            <?php
+            }
+
+            // Kalau tak ada review langsung
+            if ($count_review == 0) {
+                echo "<p class='text-center' style='color:#a4b0be;'>No reviews yet. Be the first to order!</p>";
+            }
+            ?>
+
+        </div>
+    </div>
+</section>
+
+<?php include('partials-front/footer.php'); ?>

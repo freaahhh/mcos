@@ -1,0 +1,316 @@
+-- =======================
+-- Oracle SQL Conversion
+-- =======================
+
+-- ========== CATEGORY ==========
+CREATE TABLE category (
+  category_ID NUMBER(11) PRIMARY KEY,
+  category_details VARCHAR2(255) NOT NULL,
+  category_pict VARCHAR2(255)
+);
+
+CREATE SEQUENCE category_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER category_trg
+BEFORE INSERT ON category
+FOR EACH ROW
+BEGIN
+  :NEW.category_ID := category_seq.NEXTVAL;
+END;
+/
+
+-- Insert sample data
+INSERT INTO category (category_details, category_pict) VALUES ('Main Course', 'Food_Category_697.jpg');
+INSERT INTO category (category_details, category_pict) VALUES ('Beverages', 'Food_Category_697.jpg');
+INSERT INTO category (category_details, category_pict) VALUES ('Desserts', 'Food_Category_697.jpg');
+
+-- ========== CUSTOMER ==========
+CREATE TABLE customer (
+  cust_ID NUMBER(11) PRIMARY KEY,
+  cust_username VARCHAR2(50) UNIQUE NOT NULL,
+  cust_password VARCHAR2(255) NOT NULL,
+  cust_first_name VARCHAR2(100),
+  cust_last_name VARCHAR2(100),
+  cust_contact_no VARCHAR2(20),
+  cust_dorm VARCHAR2(50),
+  bank_name VARCHAR2(100),
+  bank_account VARCHAR2(50)
+);
+
+CREATE SEQUENCE customer_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER customer_trg
+BEFORE INSERT ON customer
+FOR EACH ROW
+BEGIN
+  :NEW.cust_ID := customer_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO customer (cust_username, cust_password, cust_first_name, cust_last_name, cust_contact_no, cust_dorm, bank_name, bank_account)
+VALUES ('na','pass123','John','Doe','0123456789','Dorm A','Maybank','123456789012');
+
+-- ========== STAFF ==========
+CREATE TABLE staff (
+  staff_ID NUMBER(11) PRIMARY KEY,
+  staff_username VARCHAR2(50) UNIQUE NOT NULL,
+  staff_password VARCHAR2(255) NOT NULL,
+  staff_first_name VARCHAR2(100),
+  staff_last_name VARCHAR2(100),
+  staff_contact_no VARCHAR2(20),
+  supervisor_ID NUMBER(11)
+);
+
+CREATE SEQUENCE staff_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER staff_trg
+BEFORE INSERT ON staff
+FOR EACH ROW
+BEGIN
+  :NEW.staff_ID := staff_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO staff (staff_username, staff_password, staff_first_name, staff_last_name, staff_contact_no, supervisor_ID)
+VALUES ('admin','admin','Michael','Scott','0123456789',NULL);
+
+INSERT INTO staff (staff_username, staff_password, staff_first_name, staff_last_name, staff_contact_no, supervisor_ID)
+VALUES ('nana','beet123','Dwight','Schrute','01482917382',1);
+
+-- ========== CART ==========
+CREATE TABLE CART (
+  CART_ID NUMBER(11) PRIMARY KEY,
+  CUST_ID NUMBER(11),
+  MENU_ID NUMBER(11),
+  QUANTITY NUMBER(11) NOT NULL,
+
+  CONSTRAINT fk_cart_cust FOREIGN KEY (CUST_ID) REFERENCES CUSTOMER(CUST_ID) ON DELETE CASCADE,
+  CONSTRAINT fk_cart_menu FOREIGN KEY (MENU_ID) REFERENCES MENU(MENU_ID) ON DELETE CASCADE
+);
+
+CREATE SEQUENCE CART_SEQ START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER CART_TRG
+BEFORE INSERT ON CART
+FOR EACH ROW
+BEGIN
+  IF :NEW.CART_ID IS NULL THEN
+    SELECT CART_SEQ.NEXTVAL INTO :NEW.CART_ID FROM DUAL;
+  END IF;
+END;
+/
+
+
+-- ========== MENU ==========
+CREATE TABLE menu (
+  menu_ID NUMBER(11) PRIMARY KEY,
+  menu_name VARCHAR2(150) NOT NULL,
+  menu_details CLOB,
+  menu_price NUMBER(10,2) NOT NULL,
+  menu_availability NUMBER(1) DEFAULT 1,
+  menu_pict VARCHAR2(255),
+  category_ID NUMBER(11),
+  CONSTRAINT fk_menu_category FOREIGN KEY (category_ID) REFERENCES category(category_ID)
+);
+
+CREATE SEQUENCE menu_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER menu_trg
+BEFORE INSERT ON menu
+FOR EACH ROW
+BEGIN
+  :NEW.menu_ID := menu_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO menu (menu_name, menu_details, menu_price, menu_availability, menu_pict, category_ID)
+VALUES ('Nasi Lemak','Fragrant rice with sambal',5.50,1,'Food-Name-6340.jpg',1);
+
+INSERT INTO menu (menu_name, menu_details, menu_price, menu_availability, menu_pict, category_ID)
+VALUES ('Iced Tea','Refreshing tea with ice',2.00,1,'Food-Name-6340.jpg',2);
+
+-- ========== ORDER ==========
+CREATE TABLE orders (
+  order_ID NUMBER(11) PRIMARY KEY,
+  order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  delivery_charge NUMBER(10,2) DEFAULT 0.00,
+  grand_total NUMBER(10,2) NOT NULL,
+  cust_ID NUMBER(11),
+  staff_ID NUMBER(11),
+  CONSTRAINT fk_order_cust FOREIGN KEY (cust_ID) REFERENCES customer(cust_ID),
+  CONSTRAINT fk_order_staff FOREIGN KEY (staff_ID) REFERENCES staff(staff_ID)
+);
+
+CREATE SEQUENCE order_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER order_trg
+BEFORE INSERT ON orders
+FOR EACH ROW
+BEGIN
+  :NEW.order_ID := order_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO orders(order_date, delivery_charge, grand_total, cust_ID, staff_ID)
+VALUES (TO_TIMESTAMP('2025-12-19 18:03:12','YYYY-MM-DD HH24:MI:SS'),0.00,13.00,1,2);
+
+-- ========== ORDER_MENU ==========
+CREATE TABLE order_menu (
+  order_ID NUMBER(11),
+  menu_ID NUMBER(11),
+  order_quantity NUMBER(11) NOT NULL,
+  sub_total NUMBER(10,2) NOT NULL,
+  PRIMARY KEY (order_ID, menu_ID),
+  CONSTRAINT fk_order_menu_order FOREIGN KEY (order_ID) REFERENCES orders(order_ID),
+  CONSTRAINT fk_order_menu_menu FOREIGN KEY (menu_ID) REFERENCES menu(menu_ID)
+);
+
+INSERT INTO order_menu (order_ID, menu_ID, order_quantity, sub_total) VALUES (1,1,2,11.00);
+INSERT INTO order_menu (order_ID, menu_ID, order_quantity, sub_total) VALUES (1,2,1,2.00);
+
+-- ========== DELIVERY ==========
+CREATE TABLE delivery (
+  delivery_ID NUMBER(11) PRIMARY KEY,
+  delivery_time TIMESTAMP,
+  delivery_date TIMESTAMP,
+  delivery_status VARCHAR2(50),
+  order_ID NUMBER(11),
+  staff_ID NUMBER(11),
+  CONSTRAINT fk_delivery_order FOREIGN KEY (order_ID) REFERENCES orders(order_ID),
+  CONSTRAINT fk_delivery_staff FOREIGN KEY (staff_ID) REFERENCES staff(staff_ID)
+);
+
+CREATE SEQUENCE delivery_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER delivery_trg
+BEFORE INSERT ON delivery
+FOR EACH ROW
+BEGIN
+  :NEW.delivery_ID := delivery_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO delivery (delivery_time, delivery_date, delivery_status, order_ID, staff_ID)
+VALUES (
+  TO_TIMESTAMP('12:30:00','HH24:MI:SS'), 
+  TO_TIMESTAMP('2023-10-27 00:00:00','YYYY-MM-DD HH24:MI:SS'), 
+  'Delivered', 
+  1, 
+  2
+);
+-- ========== FEEDBACK_CATEGORY ==========
+CREATE TABLE feedback_category (
+  feedback_cat_ID NUMBER(11) PRIMARY KEY,
+  feedback_cat_name VARCHAR2(100) NOT NULL
+);
+
+CREATE SEQUENCE feedback_cat_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER feedback_cat_trg
+BEFORE INSERT ON feedback_category
+FOR EACH ROW
+BEGIN
+  :NEW.feedback_cat_ID := feedback_cat_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO feedback_category (feedback_cat_name) VALUES ('Food Quality');
+INSERT INTO feedback_category (feedback_cat_name) VALUES ('Delivery Speed');
+INSERT INTO feedback_category (feedback_cat_name) VALUES ('App Bug');
+
+-- ========== FEEDBACK ==========
+CREATE TABLE feedback (
+  feedback_ID NUMBER(11) PRIMARY KEY,
+  feedback CLOB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  cust_ID NUMBER(11),
+  order_ID NUMBER(11),
+  feedback_cat_ID NUMBER(11),
+  menu_ID NUMBER(11),
+  CONSTRAINT fk_feedback_cust FOREIGN KEY (cust_ID) REFERENCES customer(cust_ID),
+  CONSTRAINT fk_feedback_order FOREIGN KEY (order_ID) REFERENCES orders(order_ID) ON DELETE CASCADE,
+  CONSTRAINT fk_feedback_menu FOREIGN KEY (menu_ID) REFERENCES menu(menu_ID) ON DELETE CASCADE,
+  CONSTRAINT fk_feedback_cat FOREIGN KEY (feedback_cat_ID) REFERENCES feedback_category(feedback_cat_ID)
+);
+
+CREATE SEQUENCE feedback_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER feedback_trg
+BEFORE INSERT ON feedback
+FOR EACH ROW
+BEGIN
+  :NEW.feedback_ID := feedback_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO feedback (feedback, created_at, cust_ID, order_ID, feedback_cat_ID, menu_ID)
+VALUES ('It was nice. Highly recommended!',TO_TIMESTAMP('2025-12-19 21:48:22','YYYY-MM-DD HH24:MI:SS'),1,1,1,2);
+
+-- ========== PAYMENT ==========
+CREATE TABLE payment (
+  payment_ID NUMBER(11) PRIMARY KEY,
+  amount_paid NUMBER(10,2) NOT NULL,
+  payment_method VARCHAR2(50),
+  payment_status VARCHAR2(50),
+  payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  receipt_file VARCHAR2(255),
+  order_ID NUMBER(11),
+  CONSTRAINT fk_payment_order FOREIGN KEY (order_ID) REFERENCES orders(order_ID)
+);
+
+CREATE SEQUENCE payment_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER payment_trg
+BEFORE INSERT ON payment
+FOR EACH ROW
+BEGIN
+  :NEW.payment_ID := payment_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO payment (amount_paid, payment_method, payment_status, payment_date, receipt_file, order_ID)
+VALUES (13.00,'E-Wallet','Completed',TO_TIMESTAMP('2025-12-19 18:03:13','YYYY-MM-DD HH24:MI:SS'),NULL,1);
+
+-- ========== FULL_TIME ==========
+CREATE TABLE full_time (
+  staff_ID NUMBER(11) PRIMARY KEY,
+  monthly_salary NUMBER(10,2),
+  CONSTRAINT fk_full_time_staff FOREIGN KEY (staff_ID) REFERENCES staff(staff_ID) ON DELETE CASCADE
+);
+
+INSERT INTO full_time (staff_ID, monthly_salary) VALUES (1,5000.00);
+
+-- ========== PART_TIME ==========
+CREATE TABLE part_time (
+  staff_ID NUMBER(11) PRIMARY KEY,
+  hourly_salary NUMBER(10,2),
+  CONSTRAINT fk_part_time_staff FOREIGN KEY (staff_ID) REFERENCES staff(staff_ID) ON DELETE CASCADE
+);
+
+INSERT INTO part_time (staff_ID, hourly_salary) VALUES (2,15.00);
+
+-- ========== WORK_LOG ==========
+CREATE TABLE work_log (
+  log_ID NUMBER(11) PRIMARY KEY,
+  work_date DATE,
+  hours_worked NUMBER(5,2),
+  day_present VARCHAR2(20),
+  staff_ID NUMBER(11),
+  CONSTRAINT fk_work_log_staff FOREIGN KEY (staff_ID) REFERENCES staff(staff_ID)
+);
+
+CREATE SEQUENCE work_log_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER work_log_trg
+BEFORE INSERT ON work_log
+FOR EACH ROW
+BEGIN
+  :NEW.log_ID := work_log_seq.NEXTVAL;
+END;
+/
+
+INSERT INTO work_log (work_date, hours_worked, day_present, staff_ID)
+VALUES (TO_DATE('2023-10-27','YYYY-MM-DD'),8.00,'Friday',2);
+
+
+

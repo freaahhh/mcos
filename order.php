@@ -1,37 +1,51 @@
-<?php 
-ob_start(); 
-include('partials-front/menu.php'); 
+<?php
+ob_start();
+include('partials-front/menu.php');
+
+if (!isset($_SESSION['u_id'])) {
+    header('location:login.php');
+    exit;
+}
+
+$u_id = $_SESSION['u_id'];
 
 // Check whether food id is set
-if(isset($_GET['food_id'])) {
+if (isset($_GET['food_id'])) {
     $food_id = $_GET['food_id'];
 
-    $sql = "SELECT * FROM MENU WHERE menu_ID=$food_id";
-    $res = mysqli_query($conn, $sql);
-    
-    if(mysqli_num_rows($res) == 1) {
-        $row = mysqli_fetch_assoc($res);
-        $title = $row['menu_name'];
-        $price = $row['menu_price'];
-        $details = $row['menu_details']; 
-        $image_name = $row['menu_pict'];
+    $sql = "SELECT * FROM MENU WHERE menu_ID = :food_id";
+    $stid = oci_parse($conn, $sql);
+    oci_bind_by_name($stid, ":food_id", $food_id);
+    oci_execute($stid);
+
+    $row = oci_fetch_assoc($stid);
+
+    if ($row) {
+        $title = $row['MENU_NAME'];
+        $price = $row['MENU_PRICE'];
+        $details = $row['MENU_DETAILS'];
+        $image_name = $row['MENU_PICT'];
     } else {
-        header('location:'.SITEURL);
+        header('location:' . SITEURL);
+        exit;
     }
 } else {
-    header('location:'.SITEURL);
+    header('location:' . SITEURL);
+    exit;
 }
 
 // Fetch current user details
-$u_id = $_SESSION["u_id"] ?? null;
 $cust_name = $cust_contact = $cust_dorm = "";
-if($u_id) {
-    $sql_cust = "SELECT * FROM CUSTOMER WHERE cust_ID = $u_id";
-    $res_cust = mysqli_query($conn, $sql_cust);
-    $row_cust = mysqli_fetch_assoc($res_cust);
-    $cust_name = $row_cust['cust_first_name'] . " " . $row_cust['cust_last_name'];
-    $cust_contact = $row_cust['cust_contact_no'];
-    $cust_dorm = $row_cust['cust_dorm'];
+$sql_cust = "SELECT * FROM CUSTOMER WHERE cust_ID = :u_id";
+$stid_cust = oci_parse($conn, $sql_cust);
+oci_bind_by_name($stid_cust, ":u_id", $u_id);
+oci_execute($stid_cust);
+$row_cust = oci_fetch_assoc($stid_cust);
+
+if ($row_cust) {
+    $cust_name = $row_cust['CUST_FIRST_NAME'] . " " . $row_cust['CUST_LAST_NAME'];
+    $cust_contact = $row_cust['CUST_CONTACT_NO'];
+    $cust_dorm = $row_cust['CUST_DORM'];
 }
 ?>
 
@@ -46,7 +60,8 @@ if($u_id) {
                         <h3 style="border-bottom: 2px solid #ff4757; display: inline-block;">Selected Food</h3>
                         <div style="margin-top: 20px; display: flex; gap: 15px;">
                             <div class="food-menu-img">
-                                <?php if($image_name=="") echo "<div class='error'>No Image</div>"; else { ?>
+                                <?php if ($image_name == "") echo "<div class='error'>No Image</div>";
+                                else { ?>
                                     <img src="<?php echo SITEURL; ?>images/food/<?php echo $image_name; ?>" style="width: 100px; border-radius: 10px;">
                                 <?php } ?>
                             </div>
@@ -81,23 +96,25 @@ if($u_id) {
                 </div>
             </form>
 
-            <?php 
-                if(isset($_POST['submit'])) {
-                    if(empty($_SESSION["u_id"])) {
-                        header('location:login.php');
-                    } else {
-                        // Store choices in Session instead of Database
-                        $_SESSION['temp_order'] = [
-                            'food_id' => $food_id,
-                            'food_name' => $title,
-                            'price' => $price,
-                            'qty' => $_POST['qty'],
-                            'delivery_charge' => 2.00,
-                            'grand_total' => ($price * $_POST['qty']) + 2.00
-                        ];
-                        header('location:payment.php');
-                    }
+            <?php
+            if (isset($_POST['submit'])) {
+                if (empty($_SESSION["u_id"])) {
+                    header('location:login.php');
+                    exit;
+                } else {
+                    // Store choices in Session instead of Database
+                    $_SESSION['temp_order'] = [
+                        'food_id' => $food_id,
+                        'food_name' => $title,
+                        'price' => $price,
+                        'qty' => $_POST['qty'],
+                        'delivery_charge' => 2.00,
+                        'grand_total' => ($price * $_POST['qty']) + 2.00
+                    ];
+                    header('location:payment.php');
+                    exit;
                 }
+            }
             ?>
         </div>
     </div>
@@ -113,6 +130,7 @@ if($u_id) {
             updateTotals(newQty);
         }
     }
+
     function updateTotals(qty) {
         let price = parseFloat(document.getElementById('unit_price').value);
         let delivery = 2.00;
@@ -122,4 +140,5 @@ if($u_id) {
         document.getElementById('display_grand').innerText = grand.toFixed(2);
     }
 </script>
+
 <?php include('partials-front/footer.php'); ?>

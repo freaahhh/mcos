@@ -1,225 +1,133 @@
 <?php
-    $showAlert = false; 
-    $showError = false; 
-    $exists = false;
-        
-    if($_SERVER["REQUEST_METHOD"] == "POST") {
-          
-        include('config/constants.php');   
-        
-        // These match the 'name' attribute in your HTML form
-        $username = $_POST["username"]; 
-        $password = $_POST["password"]; 
-        $cpassword = $_POST["cpassword"];
-        
-        // These match the extra fields in your form
-        $customer_name = $_POST["customer_name"]; // Will map to first/last name logic below
-        $customer_contact = $_POST["customer_contact"];
-        $customer_address = $_POST["customer_address"];
-        
-        // 1. CHECK IF USER EXISTS
-        // Updated table to 'customer' and column to 'cust_username'
-        $sql = "SELECT * FROM customer WHERE cust_username='$username'";
-        $result = mysqli_query($conn, $sql);
-        $num = mysqli_num_rows($result); 
-        
-        if($num == 0) {
-            if(($password == $cpassword) && $exists == false) {
-        
-                // 2. INSERT NEW CUSTOMER
-                // Updated to match your screenshot: customer table + cust_ attributes
-                // Note: Since your screenshot shows first/last name separate, 
-                // I am putting the full name into cust_first_name for now.
-                $sql = "INSERT INTO `customer` (
-                    `cust_username`, 
-                    `cust_password`, 
-                    `cust_first_name`, 
-                    `cust_contact_no`, 
-                    `cust_dorm`
-                ) VALUES (
-                    '$username', 
-                    '$password', 
-                    '$customer_name', 
-                    '$customer_contact', 
-                    '$customer_address'
-                )";
-        
-                $result = mysqli_query($conn, $sql);
-        
-                if ($result) {
-                    $showAlert = true; 
-                } else {
-                    $showError = "Database Error: " . mysqli_error($conn);
-                }
-            } 
-            else { 
-                $showError = "Passwords do not match"; 
-            }      
+// 1. Force errors to show so we can see any hidden bugs
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// 2. Include the working constants
+include('config/constants.php');
+
+$showAlert = false;
+$showError = false;
+$exists = false;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    // Get Form Data
+    $username = $_POST["username"] ?? '';
+    $password = $_POST["password"] ?? '';
+    $cpassword = $_POST["cpassword"] ?? '';
+    $customer_name = $_POST["customer_name"] ?? '';
+    $customer_contact = $_POST["customer_contact"] ?? '';
+    $customer_address = $_POST["customer_address"] ?? '';
+
+    // 1. CHECK IF USER EXISTS
+    $sql = "SELECT COUNT(*) AS CNT FROM CUSTOMER WHERE CUST_USERNAME = :un";
+    $stid = oci_parse($conn, $sql);
+    oci_bind_by_name($stid, ":un", $username);
+    oci_execute($stid);
+
+    $row = oci_fetch_array($stid, OCI_ASSOC);
+    $num = $row['CNT'];
+
+    if ($num == 0) {
+        if ($password === $cpassword && !empty($password)) {
+            // 2. INSERT NEW CUSTOMER
+            $sql_ins = "INSERT INTO CUSTOMER (
+                            CUST_USERNAME, 
+                            CUST_PASSWORD, 
+                            CUST_FIRST_NAME, 
+                            CUST_CONTACT_NO, 
+                            CUST_DORM
+                        ) VALUES (
+                            :un, :pw, :fn, :cn, :dr
+                        )";
+
+            $stid_ins = oci_parse($conn, $sql_ins);
+            oci_bind_by_name($stid_ins, ":un", $username);
+            oci_bind_by_name($stid_ins, ":pw", $password);
+            oci_bind_by_name($stid_ins, ":fn", $customer_name);
+            oci_bind_by_name($stid_ins, ":cn", $customer_contact);
+            oci_bind_by_name($stid_ins, ":dr", $customer_address);
+
+            if (oci_execute($stid_ins, OCI_COMMIT_ON_SUCCESS)) {
+                $showAlert = true;
+            } else {
+                $e = oci_error($stid_ins);
+                $showError = "Database Error: " . $e['message'];
+            }
+        } else {
+            $showError = "Passwords do not match or are empty";
         }
-        
-       if($num > 0) {
-          $exists = "Username not available"; 
-       } 
-    }   
+    } else {
+        $exists = "Username not available";
+    }
+}
 ?>
-        
-    <!doctype html>
-        
-    <html lang="en">
-      
-    <head>
-        
-        <!-- Required meta tags --> 
-        <meta charset="utf-8"> 
-        <meta name="viewport" content=
-            "width=device-width, initial-scale=1, 
-            shrink-to-fit=no">
-        
-        <!-- Bootstrap CSS --> 
-        <link rel="stylesheet" href=
-    "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-            integrity=
-    "sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
-            crossorigin="anonymous">  
-            <link rel="stylesheet" href="css/style.css">
-    </head>
-        
-    <body>
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>MCOS - Register</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
     <section class="navbar">
         <div class="container">
             <div class="logo">
-                <a href="http://localhost/food-order/" title="Logo">
-                    <img src="images/logo.png" alt="Restaurant Logo" class="img-responsive">
+                <a href="<?php echo SITEURL; ?>">
+                    <img src="images/mcoslogo.png" alt="Logo" class="img-responsive">
                 </a>
             </div>
-<br>
             <div class="clearfix"></div>
         </div>
     </section>
-        
-    <?php
-        
-        if($showAlert) {
-        
-            echo ' <div class="alert alert-success 
-                alert-dismissible fade show" role="alert">
-        
-                <strong>Success!</strong> Your account is 
-                now created and you can <a href="login.php">login.</a> 
-                <button type="button" class="close"
-                    data-dismiss="alert" aria-label="Close"> 
-                    <span aria-hidden="true">×</span> 
-                </button> 
-            </div> '; 
-        }
-        
-        if($showError) {
-        
-            echo ' <div class="alert alert-danger 
-                alert-dismissible fade show" role="alert"> 
-            <strong>Error!</strong> '. $showError.'
-        
-           <button type="button" class="close" 
-                data-dismiss="alert aria-label="Close">
-                <span aria-hidden="true">×</span> 
-           </button> 
-         </div> '; 
-       }
-            
-        if($exists) {
-            echo ' <div class="alert alert-danger 
-                alert-dismissible fade show" role="alert">
-        
-            <strong>Error!</strong> '. $exists.'
-            <button type="button" class="close" 
-                data-dismiss="alert" aria-label="Close"> 
-                <span aria-hidden="true">×</span> 
-            </button>
-           </div> '; 
-         }
-       
-    ?>
-        
-    <div class="container my-4 ">
-        
-        <h2 class="text-center">Signup Here</h2> 
-        <h5>*All fields are required</h5>
-        <form action="" method="post">
-        
-            <div class="form-group"> 
-                <label for="username">Username</label> 
-            <input type="text" class="form-control" id="username"
-                name="username" aria-describedby="emailHelp" required>    
-            </div>
-            <div class="form-group"> 
-                <label for="username">Full Name</label> 
-            <input type="text" class="form-control" 
-                name="customer_name" aria-describedby="emailHelp" required>    
-            </div>
-            <div class="form-group"> 
-                <label for="password">Password</label> 
-                <input type="password" class="form-control"
-                id="password" name="password" required> 
-            </div>
-        
-            <div class="form-group"> 
-                <label for="cpassword">Confirm Password</label> 
-                <input type="password" class="form-control"
-                    id="cpassword" name="cpassword" required>
-        
-                <small id="emailHelp" class="form-text text-muted">
-                Make sure to type the same password
-                </small> 
-                
-            </div>  
-            <div class="form-group"> 
-                <label for="username">Email</label> 
-            <input type="email" class="form-control" 
-                name="customer_email" aria-describedby="emailHelp" required>    
-            </div>
-            <div class="form-group"> 
-                <label for="username">Phone</label> 
-            <input type="number" required class="form-control" 
-                name="customer_contact" aria-describedby="emailHelp">    
-                
-                <small id="emailHelp" class="form-text text-muted">
-                Please Enter a valid 10 digit mobile number
-                </small> 
-            </div>
-            <label for="address">Address</label> 
-            <div class="form-group">
-               
-                <textarea name="customer_address"
-                class="form-control" required>
-         </textarea></div>    
-        
-            <button type="submit" class="btn btn-primary">
-            SignUp
-            </button> 
-        </form> 
+
+    <div class="container">
+        <?php
+        if ($showAlert) echo '<div class="alert alert-success mt-3">Success! Account created. <a href="login.php">Login here</a></div>';
+        if ($showError) echo '<div class="alert alert-danger mt-3">Error! ' . $showError . '</div>';
+        if ($exists) echo '<div class="alert alert-warning mt-3">' . $exists . '</div>';
+        ?>
     </div>
-        
-    <!-- Optional JavaScript --> 
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-        
-    <script src="
-    https://code.jquery.com/jquery-3.5.1.slim.min.js"
-        integrity="
-    sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-        crossorigin="anonymous">
-    </script>
-        
-    <script src="
-    https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity=
-    "sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" 
-        crossorigin="anonymous">
-    </script>
-        
-    <script src="
-    https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" 
-        integrity=
-    "sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-        crossorigin="anonymous">
-    </script> 
-  <?php include('partials-front/footer.php'); ?>
+
+    <div class="container my-4">
+        <h2 class="text-center">Signup Here</h2>
+        <form action="" method="post">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" class="form-control" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" class="form-control" name="customer_name" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" class="form-control" name="cpassword" required>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="number" class="form-control" name="customer_contact" required>
+            </div>
+            <div class="form-group">
+                <label>Address / Dorm</label>
+                <textarea name="customer_address" class="form-control" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">SignUp</button>
+        </form>
+    </div>
+
+    <?php include('partials-front/footer.php'); ?>
+</body>
+
+</html>

@@ -9,110 +9,225 @@
     </div>
 </section>
 
-<?php 
-    if(isset($_SESSION['order'])) {
-        echo $_SESSION['order'];
-        unset($_SESSION['order']);
-    }
+<?php
+if (isset($_SESSION['order'])) {
+    echo $_SESSION['order'];
+    unset($_SESSION['order']);
+}
 ?>
 
 <section class="categories">
     <div class="container">
         <h2 class="text-center">Explore Foods</h2>
 
-        <?php 
-            // Query matches your 'category' table
-            $sql = "SELECT * FROM category LIMIT 3";
-            $res = mysqli_query($conn, $sql);
-            $count = mysqli_num_rows($res);
+        <?php
+        // 1. Fetch 3 Random Categories
+        // Pastikan nama table CATEGORY (Huruf Besar kalau perlu)
+        $sql = "SELECT * FROM (SELECT * FROM CATEGORY ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM <= 3";
+        $stid = oci_parse($conn, $sql);
+        oci_execute($stid);
 
-            if($count > 0) {
-                while($row = mysqli_fetch_assoc($res)) {
-                    // FIX: Updated keys to match your database columns
-                    $id = $row['category_ID'];
-                    $details = $row['category_details']; // Use details as the label
-                    $image_name = $row['category_pict'];
-                    ?>
-                    
-                    <a href="<?php echo SITEURL; ?>category-foods.php?category_id=<?php echo $id; ?>">
-                        <div class="box-3 float-container">
-                            <?php 
-                                if($image_name == "") {
-                                    echo "<div class='error'>Image not Available</div>";
-                                } else {
-                                    ?>
-                                    <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $details; ?>" class="img-responsive img-curve">
-                                    <?php
-                                }
-                            ?>
-                            <h3 class="float-text text-white"><?php echo $details; ?></h3>
-                        </div>
-                    </a>
+        $has_rows = false;
 
+        // 2. FIX: Tambah OCI_RETURN_NULLS untuk safety
+        while ($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
+            $has_rows = true;
+            $id = $row['CATEGORY_ID'];
+
+            $title = isset($row['CATEGORY_DETAILS']) ? $row['CATEGORY_DETAILS'] : "Category";
+
+            $image_name = $row['CATEGORY_PICT'];
+        ?>
+
+            <a href="<?php echo SITEURL; ?>category-foods.php?category_id=<?php echo $id; ?>">
+                <div class="box-3 float-container">
                     <?php
-                }
-            } else {
-                echo "<div class='error'>Category not Added.</div>";
-            }
+                    if ($image_name == "" || is_null($image_name)) {
+                        echo "<div class='error'>Image not Available</div>";
+                    } else {
+                        // Check path images/category/ atau images/
+                    ?>
+                        <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve" style="height: 250px; width: 100%; object-fit: cover;">
+                    <?php
+                    }
+                    ?>
+                    <h3 class="float-text text-white"><?php echo $title; ?></h3>
+                </div>
+            </a>
+
+        <?php
+        }
+
+        if (!$has_rows) {
+            echo "<div class='error'>Category not Added.</div>";
+        }
+        oci_free_statement($stid);
         ?>
         <div class="clearfix"></div>
     </div>
 </section>
 
-<section class="food-menu">
+<section class="review-section">
     <div class="container">
-        <h2 class="text-center">Featured Foods</h2>
+        <h2 class="text-center" style="margin-bottom: 10px; color: #2f3542; font-weight: 800; font-size: 2rem;">What Our Customers Say</h2>
 
-        <?php 
-            // Query matches your 'menu' table
-            $sql2 = "SELECT * FROM menu WHERE menu_availability='1' LIMIT 6";
-            $res2 = mysqli_query($conn, $sql2);
-            $count2 = mysqli_num_rows($res2);
+        <div class="review-container">
 
-            if($count2 > 0) {
-                while($row = mysqli_fetch_assoc($res2)) {
-                    // FIX: Updated keys to match your database columns
-                    $id = $row['menu_ID'];
-                    $title = $row['menu_name'];
-                    $price = $row['menu_price'];
-                    $description = $row['menu_details'];
-                    $image_name = $row['menu_pict'];
-                    ?>
+            <?php
+            // SQL Query (Top 3 Latest)
+            $sql_review = "SELECT * FROM (
+                                SELECT f.FEEDBACK, c.CUST_FIRST_NAME, cat.FEEDBACK_CAT_NAME
+                                FROM FEEDBACK f
+                                JOIN CUSTOMER c ON f.CUST_ID = c.CUST_ID
+                                JOIN FEEDBACK_CATEGORY cat ON f.FEEDBACK_CAT_ID = cat.FEEDBACK_CAT_ID
+                                ORDER BY f.FEEDBACK_ID DESC
+                           ) WHERE ROWNUM <= 3";
 
-                    <div class="food-menu-box">
-                        <div class="food-menu-img">
-                            <?php 
-                                if($image_name == "") {
-                                    echo "<div class='error'>Image not available.</div>";
-                                } else {
-                                    ?>
-                                    <img src="<?php echo SITEURL; ?>images/food/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
-                                    <?php
-                                }
-                            ?>
-                        </div>
+            $stid_review = oci_parse($conn, $sql_review);
+            oci_execute($stid_review);
 
-                        <div class="food-menu-desc">
-                            <h4><?php echo $title; ?></h4>
-                            <p class="food-price">RM <?php echo $price; ?></p>
-                            <p class="food-detail"><?php echo $description; ?></p>
-                            <br>
-                            <a href="food-detail.php?food_id=<?php echo $id; ?>" class="btn btn-primary">Order Now</a>
-                        </div>
-                    </div>
+            $count_review = 0;
 
-                    <?php
+            while ($review = oci_fetch_assoc($stid_review)) {
+                $count_review++;
+
+                // --- FIX UNTUK CLOB / TEXT ---
+                $feedback_text = $review['FEEDBACK'];
+                if (is_object($feedback_text)) {
+                    $feedback_text = $feedback_text->load();
                 }
-            } else {
-                echo "<div class='error'>Food not available.</div>";
-            }
-        ?>
-        <div class="clearfix"></div>
-    </div>
+                // Limit text kalau terlalu panjang (lebih 100 huruf, potong letak ...)
+                if (strlen($feedback_text) > 120) {
+                    $feedback_text = substr($feedback_text, 0, 120) . "...";
+                }
+                // -----------------------------
+            ?>
 
-    <p class="text-center">
-        <a href="<?php echo SITEURL; ?>foods.php">See All Foods</a>
-    </p>
+                <div class="review-card">
+                    <div class="quote-watermark">“</div>
+
+                    <p class="review-text">
+                        "<?php echo htmlspecialchars($feedback_text); ?>"
+                    </p>
+
+                    <div class="review-footer">
+                        <div>
+                            <h4 class="customer-name"><?php echo htmlspecialchars($review['CUST_FIRST_NAME']); ?></h4>
+                            <small style="color: #a4b0be;">Verified Customer</small>
+                        </div>
+                        <span class="category-badge">
+                            <?php echo htmlspecialchars($review['FEEDBACK_CAT_NAME']); ?>
+                        </span>
+                    </div>
+                </div>
+            <?php
+            }
+
+            // Kalau tak ada review langsung
+            if ($count_review == 0) {
+                echo "<div style='text-align:center; padding: 40px; width: 100%; color:#a4b0be;'>";
+                echo "<h3>No reviews yet. 😔</h3>";
+                echo "<p>Be the first to order and share your experience!</p>";
+                echo "</div>";
+            }
+            ?>
+
+        </div>
+    </div>
 </section>
 
 <?php include('partials-front/footer.php'); ?>
+
+<style>
+    /* CSS Khas untuk Review Section - Bagi nampak cantik! */
+    .review-section {
+        background-color: #f9f9fa;
+        /* Background kelabu cair bersih */
+        padding: 80px 0;
+    }
+
+    .review-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: center;
+        /* Centerkan semua kad */
+    }
+
+    .review-card {
+        background: white;
+        padding: 35px 30px;
+        border-radius: 20px;
+        /* Bucu bulat */
+        width: 100%;
+        max-width: 350px;
+        /* Lebar maksimum kad */
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        /* Shadow lembut */
+        transition: all 0.3s ease;
+        /* Animation smooth */
+        position: relative;
+        border: 1px solid #f0f0f0;
+        overflow: hidden;
+    }
+
+    /* Effect bila mouse hover */
+    .review-card:hover {
+        transform: translateY(-10px);
+        /* Naik atas sikit */
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        /* Shadow makin gelap */
+        border-color: #6347ffff;
+        /* Border jadi merah */
+    }
+
+    .quote-watermark {
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        font-size: 100px;
+        font-family: serif;
+        color: #ff4757;
+        opacity: 0.05;
+        /* Paling pudar, jadi background je */
+        pointer-events: none;
+    }
+
+    .review-text {
+        color: #57606f;
+        font-style: italic;
+        line-height: 1.8;
+        margin-bottom: 25px;
+        font-size: 0.95rem;
+        min-height: 80px;
+        /* Supaya tinggi kad sama */
+        position: relative;
+        z-index: 2;
+    }
+
+    .review-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #f1f2f6;
+        padding-top: 20px;
+    }
+
+    .customer-name {
+        font-weight: 700;
+        color: #2f3542;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .category-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #ff4757;
+        background: #ffeaa7;
+        padding: 5px 12px;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
