@@ -14,8 +14,8 @@ if (!defined('SITEURL')) {
 }
 
 // 2. Oracle Database Credentials
-$db_username = "mcos";
-$db_password = "mcos123";
+$db_username = "myuser"; 
+$db_password = "mcos123"; 
 $db_connection_string = "localhost/FREEPDB1";
 
 // 3. Establish Oracle Connection
