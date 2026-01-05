@@ -47,37 +47,29 @@ if (isset($_POST['submit'])) {
     oci_execute($stmt1, OCI_DEFAULT);
 
     // 2. UPSERT DELIVERY
-    // --- STEP 2: UPSERT DELIVERY (DENGAN LOGIC FAILED) ---
-
-    // Kita check dulu record wujud ke tak macam biasa
     $check_q = oci_parse($conn, "SELECT COUNT(*) AS CNT FROM DELIVERY WHERE ORDER_ID = :id");
     oci_bind_by_name($check_q, ":id", $id);
     oci_execute($check_q);
     $check_res = oci_fetch_array($check_q, OCI_ASSOC);
 
-    // --- LOGIC BARU KAT SINI ---
     if ($p_status == "Failed") {
-        // Kalau payment Failed, kita paksa status jadi Failed & rider jadi null
         $final_d_status = "Cancelled";
         $final_rider_id = null;
     } else {
-        // Kalau tak failed, kita ambil apa yang user pilih kat form
         $final_d_status = $d_status;
         $final_rider_id = !empty($rider_id) ? $rider_id : null;
     }
     // ---------------------------
 
     if ($check_res['CNT'] == 0) {
-        // INSERT kalau tak wujud
         $sql_d = "INSERT INTO DELIVERY (ORDER_ID, DELIVERY_STATUS, STAFF_ID) VALUES (:order_id, :status, :rider_id)";
     } else {
-        // UPDATE kalau dah wujud
         $sql_d = "UPDATE DELIVERY SET DELIVERY_STATUS = :status, STAFF_ID = :rider_id WHERE ORDER_ID = :order_id";
     }
 
     $stmt_d = oci_parse($conn, $sql_d);
     oci_bind_by_name($stmt_d, ":status", $final_d_status);
-    oci_bind_by_name($stmt_d, ":rider_id", $final_rider_id); // Dia akan jadi NULL kalau Failed
+    oci_bind_by_name($stmt_d, ":rider_id", $final_rider_id);
     oci_bind_by_name($stmt_d, ":order_id", $id);
     oci_execute($stmt_d, OCI_DEFAULT);
 
