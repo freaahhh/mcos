@@ -11,7 +11,11 @@ $orders = []; // Initialize as empty array
 $sn = 1;      // Initialize serial number
 
 // Fetch Orders + Delivery Status (Use LEFT JOIN)
-$sql = "SELECT o.ORDER_ID, o.ORDER_DATE, o.DELIVERY_CHARGE, o.GRAND_TOTAL, d.DELIVERY_STATUS
+$sql = "SELECT o.ORDER_ID, 
+               TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED, 
+               o.DELIVERY_CHARGE, 
+               o.GRAND_TOTAL, 
+               d.DELIVERY_STATUS
         FROM ORDERS o
         LEFT JOIN DELIVERY d ON o.ORDER_ID = d.ORDER_ID
         WHERE o.CUST_ID = :customer_id 
@@ -55,7 +59,7 @@ oci_free_statement($stid);
                     if (count($orders) > 0) {
                         foreach ($orders as $row) {
                             $order_id = $row['ORDER_ID'];
-                            $order_date = $row['ORDER_DATE'];
+                            $order_date = date('d M Y, H:i', strtotime($row['ORDER_DATE_FORMATTED']));
                             $total = $row['GRAND_TOTAL'];
                             $db_status = isset($row['DELIVERY_STATUS']) ? trim($row['DELIVERY_STATUS']) : null;
 
@@ -69,7 +73,7 @@ oci_free_statement($stid);
                                 <td style="padding: 15px;"><?php echo $sn++; ?>.</td>
                                 <td style="padding: 15px; font-weight: bold; color: #ff4757;">#<?php echo $order_id; ?></td>
                                 <td style="padding: 15px;">
-                                    <?php echo date('d M Y', strtotime($order_date)); ?>
+                                    <?php echo $order_date;?>
                                 </td>
                                 <td style="padding: 15px;">
                                     <?php echo number_format($total, 2); ?>
