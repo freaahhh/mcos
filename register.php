@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <input type="text" class="form-control" name="username" required>
             </div>
             <div class="form-group">
-                <label>Full Name</label>
+                <label>First Name</label>
                 <input type="text" class="form-control" name="customer_name" required>
             </div>
             <div class="form-group">

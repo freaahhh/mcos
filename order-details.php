@@ -16,12 +16,14 @@ if (isset($_GET['id'])) {
 
     // 3. SQL Query (Updated Table Name: ORDERS)
     // Left Join Delivery & Staff supaya tak error kalau belum assign
-    $sql = "SELECT o.*, d.delivery_status, d.delivery_time, d.delivery_date,
-                   s.staff_first_name, s.staff_last_name
-            FROM ORDERS o
-            LEFT JOIN DELIVERY d ON o.order_ID = d.order_ID
-            LEFT JOIN STAFF s ON d.staff_ID = s.staff_ID
-            WHERE o.order_ID = :order_id AND o.cust_ID = :cust_id";
+    $sql = "SELECT o.ORDER_ID, o.CUST_ID, o.GRAND_TOTAL, o.DELIVERY_CHARGE,
+               TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED,
+               d.delivery_status, d.delivery_time, d.delivery_date,
+               s.staff_first_name, s.staff_last_name
+        FROM ORDERS o
+        LEFT JOIN DELIVERY d ON o.order_ID = d.order_ID
+        LEFT JOIN STAFF s ON d.staff_ID = s.staff_ID
+        WHERE o.order_ID = :order_id AND o.cust_ID = :cust_id";
 
     $stid = oci_parse($conn, $sql);
     oci_bind_by_name($stid, ":order_id", $order_id);
@@ -38,7 +40,7 @@ if (isset($_GET['id'])) {
     }
 
     // Prepare Data untuk Display
-    $order_date = date('d M Y, H:i', strtotime($row['ORDER_DATE']));
+    $order_date = date('d M Y, H:i', strtotime($row['ORDER_DATE_FORMATTED']));
     $grand_total = $row['GRAND_TOTAL'];
     $delivery_charge = $row['DELIVERY_CHARGE'];
 
