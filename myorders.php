@@ -1,7 +1,6 @@
 <?php
 include('partials-front/menu.php');
 
-// 1. Mandatory Check: If session is lost, send to login
 if (!isset($_SESSION['u_id'])) {
     header('location: login.php');
     exit();
@@ -11,8 +10,7 @@ $customer_id = $_SESSION['u_id'];
 $orders = []; // Initialize as empty array
 $sn = 1;      // Initialize serial number
 
-// 2. Fetch Orders + Delivery Status (Guna LEFT JOIN)
-// Kita guna alias 'o' untuk ORDERS dan 'd' untuk DELIVERY
+// Fetch Orders + Delivery Status (Use LEFT JOIN)
 $sql = "SELECT o.ORDER_ID, o.ORDER_DATE, o.DELIVERY_CHARGE, o.GRAND_TOTAL, d.DELIVERY_STATUS
         FROM ORDERS o
         LEFT JOIN DELIVERY d ON o.ORDER_ID = d.ORDER_ID
@@ -59,12 +57,8 @@ oci_free_statement($stid);
                             $order_id = $row['ORDER_ID'];
                             $order_date = $row['ORDER_DATE'];
                             $total = $row['GRAND_TOTAL'];
-
-                            // LOGIC STATUS:
-                            // Kalau DELIVERY_STATUS kosong, maksudnya "Processing"
                             $db_status = isset($row['DELIVERY_STATUS']) ? trim($row['DELIVERY_STATUS']) : null;
 
-                            // Tentukan text status
                             if (empty($db_status)) {
                                 $display_status = "Processing";
                             } else {
@@ -82,8 +76,6 @@ oci_free_statement($stid);
                                 </td>
                                 <td style="padding: 15px;">
                                     <?php
-                                    // LOGIC WARNA STATUS
-                                    // Kita guna strtoupper supaya tak kisah huruf besar/kecil
                                     $check_status = strtoupper($display_status);
 
                                     if ($check_status == "DELIVERED") {
@@ -93,7 +85,6 @@ oci_free_statement($stid);
                                     } elseif ($check_status == "CANCELLED") {
                                         echo "<span style='background: #ff4757; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold;'>Cancelled</span>";
                                     } else {
-                                        // Default untuk Processing / Pending
                                         echo "<span style='background: #57606f; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold;'>Processing</span>";
                                     }
                                     ?>

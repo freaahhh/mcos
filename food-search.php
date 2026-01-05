@@ -3,7 +3,6 @@
 <section class="food-search text-center">
     <div class="container">
         <?php
-        // Ambil search keyword
         $search = isset($_POST['search']) ? trim($_POST['search']) : "";
         ?>
         <h2>Foods on Your Search <a href="#" class="text-white">"<?php echo htmlspecialchars($search); ?>"</a></h2>
@@ -16,16 +15,11 @@
 
         <?php
         if ($search != "") {
-            // FIX 1: SQL Case Insensitive (Guna UPPER)
-            // Oracle ni sensitif. 'Burger' tak sama dengan 'burger'.
-            // Kita tukar dua-dua jadi UPPER supaya search lebih power.
             $sql = "SELECT * FROM MENU 
                     WHERE (UPPER(MENU_NAME) LIKE UPPER(:search) OR UPPER(MENU_DETAILS) LIKE UPPER(:search)) 
                     AND MENU_AVAILABILITY = '1'";
 
             $stid = oci_parse($conn, $sql);
-
-            // Masukkan % siap-siap
             $like_search = "%" . $search . "%";
             oci_bind_by_name($stid, ":search", $like_search);
 
@@ -33,8 +27,6 @@
 
             $found = false;
 
-            // FIX 2: Tambah 'OCI_RETURN_LOBS + OCI_RETURN_NULLS'
-            // Wajib ada supaya tak error bila jumpa Description kosong
             while ($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_LOBS + OCI_RETURN_NULLS)) {
                 $found = true;
 
@@ -43,7 +35,6 @@
                 $price = $row['MENU_PRICE'];
                 $image_name = $row['MENU_PICT'];
 
-                // FIX 3: Handle Description NULL
                 $description = isset($row['MENU_DETAILS']) ? $row['MENU_DETAILS'] : "No description available.";
         ?>
                 <div class="food-menu-box">
@@ -52,7 +43,6 @@
                         if ($image_name == "" || is_null($image_name)) {
                             echo "<div class='error'>Image not Available.</div>";
                         } else {
-                            // Check path images/food/ atau images/
                         ?>
                             <img src="<?php echo SITEURL; ?>images/food/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
                         <?php } ?>

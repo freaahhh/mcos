@@ -1,10 +1,8 @@
 <?php
-// 1. Force errors to show so we can see any hidden bugs
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// 2. Include the working constants
 include('config/constants.php');
 
 $showAlert = false;
@@ -13,7 +11,6 @@ $exists = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // Get Form Data
     $username = $_POST["username"] ?? '';
     $password = $_POST["password"] ?? '';
     $cpassword = $_POST["cpassword"] ?? '';

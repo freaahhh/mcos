@@ -55,7 +55,6 @@ if (isset($_GET['category_id'])) {
                 $price = $row2['MENU_PRICE'];
                 $description = $row2['MENU_DETAILS'];
 
-                // Kalau dia bentuk Object (CLOB), kita convert jadi text biasa
                 if (is_object($description)) {
                     $description = $description->load();
                 }

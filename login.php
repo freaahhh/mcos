@@ -35,17 +35,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($username_err) && empty($password_err)) {
 
-        // --- STEP 1: CHECK CUSTOMER TABLE ---
         $sql_cust = "SELECT CUST_ID, CUST_USERNAME, CUST_PASSWORD FROM CUSTOMER WHERE CUST_USERNAME = :username";
         $stid = oci_parse($conn, $sql_cust);
         oci_bind_by_name($stid, ":username", $username);
         oci_execute($stid);
-
-        // CORRECTED: Use oci_fetch_array with OCI_ASSOC
         $row = oci_fetch_array($stid, OCI_ASSOC);
 
         if ($row) {
-            // Oracle returns keys in UPPERCASE
             if ($password === $row['CUST_PASSWORD']) {
                 $_SESSION["loggedin"] = true;
                 $_SESSION["u_id"] = $row['CUST_ID'];
@@ -58,7 +54,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         oci_free_statement($stid);
 
-        // --- STEP 2: CHECK STAFF TABLE ---
         $sql_staff = "SELECT STAFF_ID, STAFF_USERNAME, STAFF_PASSWORD FROM STAFF WHERE STAFF_USERNAME = :username";
         $stid = oci_parse($conn, $sql_staff);
         oci_bind_by_name($stid, ":username", $username);
@@ -81,8 +76,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $login_err = "Invalid username or password.";
     }
-    // Note: Do not close $conn here if you use it in included files later, 
-    // but usually it's fine at the end of the script.
 }
 ?>
 

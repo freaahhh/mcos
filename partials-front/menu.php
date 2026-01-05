@@ -11,8 +11,6 @@ header("Pragma: no-cache");
 
 include('config/constants.php');
 
-// 3. REMOVED the "exit()" redirect here. 
-// We want guests to see the menu too! Only check u_id for the Cart section.
 ?>
 
 <!DOCTYPE html>
@@ -67,14 +65,12 @@ include('config/constants.php');
         oci_bind_by_name($res_cart_count, ':user_id', $c_user_id);
 
         if (oci_execute($res_cart_count)) {
-            // Use OCI_ASSOC to get the column names as keys
             $row_cart_count = oci_fetch_array($res_cart_count, OCI_ASSOC);
 
-            // FIX: Access using UPPERCASE key and check for NULL
             if ($row_cart_count && isset($row_cart_count['TOTAL_ITEMS'])) {
                 $cart_count = (int)$row_cart_count['TOTAL_ITEMS'];
             } else {
-                $cart_count = 0; // Set to 0 if the cart is empty
+                $cart_count = 0;
             }
         }
         oci_free_statement($res_cart_count);

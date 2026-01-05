@@ -11,14 +11,12 @@ if (!isset($_SESSION['u_id']) || $_SESSION['user_role'] !== 'customer') {
 $cust_id = $_SESSION['u_id'];
 
 // 1. Fetch Customer details
-// We use :cid as a bind variable for security and Oracle compatibility
 $sql = "SELECT * FROM CUSTOMER WHERE CUST_ID = :cid";
 $res = oci_parse($conn, $sql);
 oci_bind_by_name($res, ':cid', $cust_id);
 oci_execute($res);
 $row = oci_fetch_array($res, OCI_ASSOC + OCI_RETURN_NULLS);
 
-// 2. Fetch Recent Orders (Ditambah TO_CHAR supaya PHP faham tarikh)
 $sql_orders = "SELECT * FROM (
                 SELECT 
                     ORDER_ID, 
@@ -105,7 +103,6 @@ if (isset($_POST['update_cust'])) {
                 $has_orders = false;
                 while ($order = oci_fetch_array($res_orders, OCI_ASSOC)):
                     $has_orders = true;
-                    // Tukar string dari DB jadi tarikh yang cantik
                     $display_date = date('d M Y, H:i', strtotime($order['ORDER_DATE_FORMATTED']));
                 ?>
                     <tr style="border-bottom: 1px solid #444;">

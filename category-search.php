@@ -3,7 +3,6 @@
 <section class="food-search text-center">
     <div class="container">
         <?php
-        // Get the search term safely
         $search = isset($_POST['search']) ? trim($_POST['search']) : '';
         $search_display = htmlspecialchars($search, ENT_QUOTES);
         ?>
@@ -15,13 +14,9 @@
     <div class="container">
         <?php
         if ($search != "") {
-            // FIX 1: Guna UPPER() untuk Case Insensitive Search
-            // "pizza" akan jumpa "Pizza", "PIZZA", atau "PiZZa"
             $sql = "SELECT * FROM CATEGORY WHERE UPPER(CATEGORY_DETAILS) LIKE UPPER(:search)";
 
             $stid = oci_parse($conn, $sql);
-
-            // Bind variable
             $search_param = "%" . $search . "%";
             oci_bind_by_name($stid, ":search", $search_param);
 
@@ -29,14 +24,10 @@
 
             $found = false;
 
-            // FIX 2: Guna Magic Flags (OCI_RETURN_NULLS + OCI_RETURN_LOBS)
-            // Ini standard procedure kita untuk elak error "Undefined key"
             while ($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
                 $found = true;
 
                 $id = $row['CATEGORY_ID'];
-
-                // Safety check untuk Title
                 $title = isset($row['CATEGORY_DETAILS']) ? $row['CATEGORY_DETAILS'] : "Category";
 
                 $image_name = $row['CATEGORY_PICT'];
@@ -47,7 +38,6 @@
                         if ($image_name == "" || is_null($image_name)) {
                             echo "<div class='error'>Image not found</div>";
                         } else {
-                            // Pastikan path image betul. Usually 'images/category/'
                         ?>
                             <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve">
                         <?php } ?>

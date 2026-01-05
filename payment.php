@@ -11,7 +11,6 @@ if (empty($_SESSION["u_id"])) {
 $u_id = $_SESSION['u_id'];
 
 // 2. Fetch Customer Details
-// Guna OCI_RETURN_NULLS supaya tak error kalau contact/dorm kosong
 $sql_cust = "SELECT * FROM CUSTOMER WHERE CUST_ID = :cust_id";
 $stid_cust = oci_parse($conn, $sql_cust);
 oci_bind_by_name($stid_cust, ":cust_id", $u_id);
@@ -34,7 +33,6 @@ $subtotal = isset($row_total['SUBTOTAL']) ? $row_total['SUBTOTAL'] : 0;
 $delivery = 2.00;
 $grand_total = $subtotal + $delivery;
 
-// If cart empty, tendang balik
 if ($subtotal == 0) {
     header('location:foods.php');
     exit;
@@ -48,7 +46,7 @@ if (isset($_POST['confirm_payment'])) {
     $valid_upload = false;
     $receipt_name = "";
 
-    // A. Handle File Upload Dulu
+    // A. Handle File Upload 
     if (isset($_FILES['receipt']['name']) && $_FILES['receipt']['name'] != "") {
         $ext = pathinfo($_FILES['receipt']['name'], PATHINFO_EXTENSION);
         $receipt_name = "Receipt-" . time() . "-" . rand(000, 999) . "." . $ext;
@@ -64,9 +62,6 @@ if (isset($_POST['confirm_payment'])) {
     }
 
     if ($valid_upload) {
-        // --- START TRANSACTION (ACID Compliance) ---
-        // Kita tak guna OCI_COMMIT_ON_SUCCESS. Kita commit manual last sekali.
-
         try {
             $sql1 = "INSERT INTO ORDERS (ORDER_ID, GRAND_TOTAL, DELIVERY_CHARGE, CUST_ID, STAFF_ID)
                      VALUES (ORDER_SEQ.NEXTVAL, :grand_total, :delivery, :cust_id, 2)
@@ -76,11 +71,8 @@ if (isset($_POST['confirm_payment'])) {
             oci_bind_by_name($stid1, ":grand_total", $grand_total);
             oci_bind_by_name($stid1, ":delivery", $delivery);
             oci_bind_by_name($stid1, ":cust_id", $u_id);
-
-            // Bind output variable untuk dapatkan Order ID baru
             oci_bind_by_name($stid1, ":order_id", $new_order_id, 32, SQLT_INT);
 
-            // EXECUTE NO AUTO COMMIT
             if (!oci_execute($stid1, OCI_NO_AUTO_COMMIT)) throw new Exception("Failed to create Order");
 
             // STEP 2: Get Items from Cart
@@ -93,8 +85,6 @@ if (isset($_POST['confirm_payment'])) {
             oci_execute($stid_cart); // Select tak perlu commit
 
             // STEP 3: Insert into ORDER_MENU
-            // Prepare statement kat luar loop (Performance optimization)
-            // Buang ORDER_MENU_ID dan SEQUENCE
             $sql2 = "INSERT INTO ORDER_MENU (ORDER_ID, MENU_ID, ORDER_QUANTITY, SUB_TOTAL)
                      VALUES (:order_id, :menu_id, :qty, :sub_total)";
             $stid2 = oci_parse($conn, $sql2);

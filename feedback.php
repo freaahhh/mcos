@@ -1,7 +1,6 @@
 <?php
 include('partials-front/menu.php');
 
-// Check Login & URL
 if (!isset($_SESSION['u_id'])) {
     header('location:login.php');
     exit;
@@ -14,13 +13,11 @@ if (!isset($_GET['id'])) {
 $order_id = $_GET['id'];
 $cust_id = $_SESSION['u_id'];
 
-// --- CHECK: Dah pernah submit ke belum? ---
 $sql_check = "SELECT * FROM FEEDBACK WHERE ORDER_ID = :order_id";
 $stid_check = oci_parse($conn, $sql_check);
 oci_bind_by_name($stid_check, ":order_id", $order_id);
 oci_execute($stid_check);
 
-// Kalau jumpa row, maksudnya dah submit
 $already_submitted = oci_fetch_assoc($stid_check) ? true : false;
 oci_free_statement($stid_check);
 
@@ -28,9 +25,7 @@ oci_free_statement($stid_check);
 if (isset($_POST['submit_feedback']) && !$already_submitted) {
     $feedback_text = $_POST['feedback_text'];
     $feedback_cat = $_POST['feedback_cat'];
-    //$rating = $_POST['rating'];
 
-    // Insert (Tanpa MENU_ID)
     $sql_fb = "INSERT INTO FEEDBACK (FEEDBACK, CUST_ID, ORDER_ID, FEEDBACK_CAT_ID) 
                VALUES (:feedback, :cust_id, :order_id, :feedback_cat)";
 
@@ -39,10 +34,8 @@ if (isset($_POST['submit_feedback']) && !$already_submitted) {
     oci_bind_by_name($stid_fb, ":cust_id", $cust_id);
     oci_bind_by_name($stid_fb, ":order_id", $order_id);
     oci_bind_by_name($stid_fb, ":feedback_cat", $feedback_cat);
-    //oci_bind_by_name($stid_fb, ":rating", $rating);
 
     if (oci_execute($stid_fb)) {
-        // Refresh page supaya nampak success message
         header("Refresh:0");
     } else {
         $e = oci_error($stid_fb);
@@ -51,7 +44,6 @@ if (isset($_POST['submit_feedback']) && !$already_submitted) {
     oci_free_statement($stid_fb);
 }
 
-// --- FETCH ITEMS (Untuk Display Sahaja) ---
 $sql_items = "SELECT m.MENU_NAME 
               FROM ORDER_MENU om 
               JOIN MENU m ON om.MENU_ID = m.MENU_ID 
@@ -95,19 +87,6 @@ oci_execute($stid_cat);
                 </div>
 
                 <form action="" method="POST">
-                    <!-- takde dlm db
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="font-weight: bold;">Rating</label>
-                        <select name="rating" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
-                            <option value="4">⭐⭐⭐⭐ Good</option>
-                            <option value="3">⭐⭐⭐ Average</option>
-                            <option value="2">⭐⭐ Poor</option>
-                            <option value="1">⭐ Very Bad</option>
-                        </select>
-                    </div>
-                    -->
-
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label style="font-weight: bold;">Category</label>
                         <select name="feedback_cat" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">

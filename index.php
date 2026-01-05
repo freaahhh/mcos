@@ -22,14 +22,11 @@ if (isset($_SESSION['order'])) {
 
         <?php
         // 1. Fetch 3 Random Categories
-        // Pastikan nama table CATEGORY (Huruf Besar kalau perlu)
         $sql = "SELECT * FROM (SELECT * FROM CATEGORY ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM <= 3";
         $stid = oci_parse($conn, $sql);
         oci_execute($stid);
-
         $has_rows = false;
 
-        // 2. FIX: Tambah OCI_RETURN_NULLS untuk safety
         while ($row = oci_fetch_array($stid, OCI_ASSOC + OCI_RETURN_NULLS + OCI_RETURN_LOBS)) {
             $has_rows = true;
             $id = $row['CATEGORY_ID'];
@@ -45,7 +42,6 @@ if (isset($_SESSION['order'])) {
                     if ($image_name == "" || is_null($image_name)) {
                         echo "<div class='error'>Image not Available</div>";
                     } else {
-                        // Check path images/category/ atau images/
                     ?>
                         <img src="<?php echo SITEURL; ?>images/category/<?php echo $image_name; ?>" alt="<?php echo $title; ?>" class="img-responsive img-curve" style="height: 250px; width: 100%; object-fit: cover;">
                     <?php
@@ -91,12 +87,10 @@ if (isset($_SESSION['order'])) {
             while ($review = oci_fetch_assoc($stid_review)) {
                 $count_review++;
 
-                // --- FIX UNTUK CLOB / TEXT ---
                 $feedback_text = $review['FEEDBACK'];
                 if (is_object($feedback_text)) {
                     $feedback_text = $feedback_text->load();
                 }
-                // Limit text kalau terlalu panjang (lebih 100 huruf, potong letak ...)
                 if (strlen($feedback_text) > 120) {
                     $feedback_text = substr($feedback_text, 0, 120) . "...";
                 }
@@ -123,7 +117,6 @@ if (isset($_SESSION['order'])) {
             <?php
             }
 
-            // Kalau tak ada review langsung
             if ($count_review == 0) {
                 echo "<div style='text-align:center; padding: 40px; width: 100%; color:#a4b0be;'>";
                 echo "<h3>No reviews yet. 😔</h3>";
@@ -139,10 +132,8 @@ if (isset($_SESSION['order'])) {
 <?php include('partials-front/footer.php'); ?>
 
 <style>
-    /* CSS Khas untuk Review Section - Bagi nampak cantik! */
     .review-section {
         background-color: #f9f9fa;
-        /* Background kelabu cair bersih */
         padding: 80px 0;
     }
 
@@ -151,34 +142,25 @@ if (isset($_SESSION['order'])) {
         flex-wrap: wrap;
         gap: 30px;
         justify-content: center;
-        /* Centerkan semua kad */
     }
 
     .review-card {
         background: white;
         padding: 35px 30px;
         border-radius: 20px;
-        /* Bucu bulat */
         width: 100%;
         max-width: 350px;
-        /* Lebar maksimum kad */
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-        /* Shadow lembut */
         transition: all 0.3s ease;
-        /* Animation smooth */
         position: relative;
         border: 1px solid #f0f0f0;
         overflow: hidden;
     }
 
-    /* Effect bila mouse hover */
     .review-card:hover {
         transform: translateY(-10px);
-        /* Naik atas sikit */
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-        /* Shadow makin gelap */
         border-color: #6347ffff;
-        /* Border jadi merah */
     }
 
     .quote-watermark {
@@ -189,7 +171,6 @@ if (isset($_SESSION['order'])) {
         font-family: serif;
         color: #ff4757;
         opacity: 0.05;
-        /* Paling pudar, jadi background je */
         pointer-events: none;
     }
 
@@ -200,7 +181,6 @@ if (isset($_SESSION['order'])) {
         margin-bottom: 25px;
         font-size: 0.95rem;
         min-height: 80px;
-        /* Supaya tinggi kad sama */
         position: relative;
         z-index: 2;
     }

@@ -1,7 +1,6 @@
 <?php
 include('partials-front/menu.php');
 
-// 1. Security Check - User mesti login
 if (!isset($_SESSION['u_id'])) {
     header('location:login.php');
     exit;
@@ -9,13 +8,11 @@ if (!isset($_SESSION['u_id'])) {
 
 $cust_id = $_SESSION['u_id'];
 
-// 2. Check ada tak ID di pass dari URL (match dengan link di myorders.php)
 if (isset($_GET['id'])) {
 
-    $order_id = $_GET['id']; // Kita guna variable 'id' sebab link guna ?id=
+    $order_id = $_GET['id'];
 
-    // 3. SQL Query (Updated Table Name: ORDERS)
-    // Left Join Delivery & Staff supaya tak error kalau belum assign
+    // SQL Query (Updated Table Name: ORDERS)
     $sql = "SELECT o.ORDER_ID, o.CUST_ID, o.GRAND_TOTAL, o.DELIVERY_CHARGE,
                TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED,
                d.delivery_status, d.delivery_time, d.delivery_date,
@@ -32,29 +29,23 @@ if (isset($_GET['id'])) {
 
     $row = oci_fetch_assoc($stid);
 
-
-    // Kalau order tak jumpa (user cuba main tembak ID orang lain)
     if (!$row) {
         header('location:' . SITEURL . 'myorders.php');
         exit();
     }
 
-    // Prepare Data untuk Display
     $order_date = date('d M Y, H:i', strtotime($row['ORDER_DATE_FORMATTED']));
     $grand_total = $row['GRAND_TOTAL'];
     $delivery_charge = $row['DELIVERY_CHARGE'];
-
-    // Status Logic (Default Processing kalau NULL)
     $status = isset($row['DELIVERY_STATUS']) ? $row['DELIVERY_STATUS'] : "Processing";
 
-    // Staff Logic
     if (isset($row['STAFF_FIRST_NAME'])) {
         $staff_name = $row['STAFF_FIRST_NAME'] . " " . $row['STAFF_LAST_NAME'];
     } else {
         $staff_name = "Finding Driver...";
     }
 
-    // 4. Check Feedback (Untuk button review nanti)
+    // Check Feedback
     $sql_fb = "SELECT COUNT(*) AS CNT FROM FEEDBACK WHERE order_ID = :order_id";
     $stid_fb = oci_parse($conn, $sql_fb);
     oci_bind_by_name($stid_fb, ":order_id", $order_id);
@@ -63,12 +54,11 @@ if (isset($_GET['id'])) {
     $fb_row = oci_fetch_assoc($stid_fb);
     $feedback_exists = $fb_row['CNT'] > 0;
 } else {
-    // Kalau takde ID, tendang balik
     header('location:' . SITEURL . 'myorders.php');
     exit();
 }
 
-// 5. Fetch Items dalam Order tu
+// Fetch Items in Orders
 $sql_items = "SELECT om.*, m.menu_name
               FROM ORDER_MENU om
               JOIN MENU m ON om.menu_ID = m.menu_ID
@@ -99,11 +89,10 @@ while (($item = oci_fetch_assoc($stid_items)) != false) {
                 <div style="text-align: right;">
                     <p style="margin-bottom: 8px; font-weight: bold; color: #747d8c;">Status</p>
                     <?php
-                    // Warna Warni Status
-                    $status_bg = '#f1c40f'; // Default Kuning
-                    if ($status == 'Delivered') $status_bg = '#2ecc71'; // Hijau
-                    else if ($status == 'Cancelled') $status_bg = '#ff4757'; // Merah
-                    else if ($status == 'On The Way') $status_bg = '#3498db'; // Biru
+                    $status_bg = '#f1c40f';
+                    if ($status == 'Delivered') $status_bg = '#2ecc71';
+                    else if ($status == 'Cancelled') $status_bg = '#ff4757';
+                    else if ($status == 'On The Way') $status_bg = '#3498db';
                     ?>
                     <span style="padding: 8px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: bold; background-color: <?php echo $status_bg; ?>; color: white; display: inline-block;">
                         <?php echo $status; ?>
