@@ -8,19 +8,24 @@
     $sql = "";
 
     // Report Type Logic with GROUP BY and HAVING
+    // Report Type Logic 
     if($type == 'weekly') {
         $title = "Weekly Sales Summary (Week " . date('W') . ")";
-        $sql = "SELECT * FROM ORDERS 
+        $sql = "SELECT ORDER_ID, DELIVERY_CHARGE, GRAND_TOTAL, 
+                       TO_CHAR(ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED 
+                FROM ORDERS 
                 WHERE TO_CHAR(ORDER_DATE, 'IYYYIW') = TO_CHAR(SYSDATE, 'IYYYIW') 
                 ORDER BY ORDER_DATE DESC";
     } elseif($type == 'monthly') {
         $title = "Monthly Revenue Audit (" . date('F Y') . ")";
-        $sql = "SELECT * FROM ORDERS 
+        $sql = "SELECT ORDER_ID, DELIVERY_CHARGE, GRAND_TOTAL, 
+                       TO_CHAR(ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED 
+                FROM ORDERS 
                 WHERE TO_CHAR(ORDER_DATE, 'MM-YYYY') = TO_CHAR(SYSDATE, 'MM-YYYY') 
                 ORDER BY ORDER_DATE DESC";
     } elseif($type == 'products') {
+        // SQL Produk kekal sama sebab tiada kolum Date yang perlu diproses
         $title = "High-Performance Products (Star Items)";
-        // QUERY 1: Aggregating units sold and filtering for high demand
         $sql = "SELECT m.MENU_NAME, SUM(om.ORDER_QUANTITY) as TOTAL_VAL, COUNT(om.ORDER_ID) as SUB_COUNT 
                 FROM ORDER_MENU om 
                 JOIN MENU m ON om.MENU_ID = m.MENU_ID 
@@ -28,8 +33,8 @@
                 HAVING SUM(om.ORDER_QUANTITY) > 5 
                 ORDER BY TOTAL_VAL DESC";
     } elseif($type == 'customers') {
+        // SQL Customer kekal sama
         $title = "Frequent Customer Analytics (Loyalty Report)";
-        // QUERY 2: Aggregating order counts and filtering for frequent buyers
         $sql = "SELECT c.CUST_USERNAME, COUNT(o.ORDER_ID) as TOTAL_VAL, SUM(o.GRAND_TOTAL) as SUB_COUNT 
                 FROM ORDERS o 
                 JOIN CUSTOMER c ON o.CUST_ID = c.CUST_ID 
@@ -84,40 +89,45 @@
             </tr>
         </thead>
         <tbody>
-            <?php 
-                $stmt = oci_parse($conn, $sql);
-                oci_execute($stmt);
-                $grand_total = 0;
+        <?php 
+            $stmt = oci_parse($conn, $sql);
+            oci_execute($stmt);
+            $grand_total = 0;
 
-                while($row = oci_fetch_array($stmt, OCI_ASSOC)):
-            ?>
-                <tr>
-                    <?php if($type == 'products' || $type == 'customers'): ?>
-                        <td>
-                            <?php echo ($type == 'products') ? $row['MENU_NAME'] : $row['CUST_USERNAME']; ?> 
-                            <span class="badge">Verified</span>
-                        </td>
-                        <td style="font-weight: bold;"><?php echo $row['TOTAL_VAL']; ?></td>
-                        <td>
-                            <?php 
-                                if($type == 'products') {
-                                    echo $row['SUB_COUNT'] . " Times Ordered";
-                                } else {
-                                    echo "RM " . number_format($row['SUB_COUNT'], 2);
-                                    $grand_total += $row['SUB_COUNT'];
-                                }
-                            ?>
-                        </td>
-                    <?php else: ?>
-                        <td>#<?php echo $row['ORDER_ID']; ?></td>
-                        <td><?php echo date('d M Y', strtotime($row['ORDER_DATE'])); ?></td>
-                        <td>RM <?php echo number_format($row['DELIVERY_CHARGE'] ?? 0, 2); ?></td>
-                        <td style="font-weight: bold;">RM <?php echo number_format($row['GRAND_TOTAL'], 2); ?></td>
-                        <?php $grand_total += $row['GRAND_TOTAL']; ?>
-                    <?php endif; ?>
-                </tr>
-            <?php endwhile; oci_free_statement($stmt); ?>
-        </tbody>
+            while($row = oci_fetch_array($stmt, OCI_ASSOC)):
+        ?>
+            <tr>
+                <?php if($type == 'products' || $type == 'customers'): ?>
+                    <td>
+                        <?php echo ($type == 'products') ? $row['MENU_NAME'] : $row['CUST_USERNAME']; ?> 
+                        <span class="badge">Verified</span>
+                    </td>
+                    <td style="font-weight: bold;"><?php echo $row['TOTAL_VAL']; ?></td>
+                    <td>
+                        <?php 
+                            if($type == 'products') {
+                                echo $row['SUB_COUNT'] . " Times Ordered";
+                            } else {
+                                echo "RM " . number_format($row['SUB_COUNT'], 2);
+                                $grand_total += $row['SUB_COUNT'];
+                            }
+                        ?>
+                    </td>
+                <?php else: ?>
+                    <td>#<?php echo $row['ORDER_ID']; ?></td>
+                    <td>
+                        <?php 
+                            // TUKAR FORMAT TARIKH DI SINI
+                            echo date('d M Y', strtotime($row['ORDER_DATE_FORMATTED'])); 
+                        ?>
+                    </td>
+                    <td>RM <?php echo number_format($row['DELIVERY_CHARGE'] ?? 0, 2); ?></td>
+                    <td style="font-weight: bold;">RM <?php echo number_format($row['GRAND_TOTAL'], 2); ?></td>
+                    <?php $grand_total += $row['GRAND_TOTAL']; ?>
+                <?php endif; ?>
+            </tr>
+        <?php endwhile; oci_free_statement($stmt); ?>
+    </tbody>
     </table>
 
     <div class="summary-box">
