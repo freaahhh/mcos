@@ -11,10 +11,12 @@ $exists = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
+    // Ambil input dari Form
     $username = $_POST["username"] ?? '';
     $password = $_POST["password"] ?? '';
     $cpassword = $_POST["cpassword"] ?? '';
-    $customer_name = $_POST["customer_name"] ?? '';
+    $customer_name = $_POST["customer_name"] ?? ''; // First Name
+    $customer_last_name = $_POST["customer_last_name"] ?? ''; // Last Name
     $customer_contact = $_POST["customer_contact"] ?? '';
     $customer_address = $_POST["customer_address"] ?? '';
 
@@ -29,22 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($num == 0) {
         if ($password === $cpassword && !empty($password)) {
-            // 2. INSERT NEW CUSTOMER
-            if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    $username = $_POST["username"] ?? '';
-    $password = $_POST["password"] ?? '';
-    $cpassword = $_POST["cpassword"] ?? '';
-    $customer_name = $_POST["customer_name"] ?? ''; // First Name
-    $customer_last_name = $_POST["customer_last_name"] ?? ''; // Tambah ini
-    $customer_contact = $_POST["customer_contact"] ?? '';
-    $customer_address = $_POST["customer_address"] ?? '';
-
-    // ... (logic check num == 0 kekal sama) ...
-
-    if ($num == 0) {
-        if ($password === $cpassword && !empty($password)) {
-            // 2. INSERT NEW CUSTOMER (Tambah CUST_LAST_NAME)
+            // 2. INSERT NEW CUSTOMER (Dengan Last Name)
             $sql_ins = "INSERT INTO CUSTOMER (
                             CUST_USERNAME, 
                             CUST_PASSWORD, 
@@ -57,14 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         )";
 
             $stid_ins = oci_parse($conn, $sql_ins);
+
+            // Bind semua variable
             oci_bind_by_name($stid_ins, ":un", $username);
             oci_bind_by_name($stid_ins, ":pw", $password);
             oci_bind_by_name($stid_ins, ":fn", $customer_name);
-            oci_bind_by_name($stid_ins, ":ln", $customer_last_name); // Bind Last Name
+            oci_bind_by_name($stid_ins, ":ln", $customer_last_name); // Bind Last Name kat sini
             oci_bind_by_name($stid_ins, ":cn", $customer_contact);
             oci_bind_by_name($stid_ins, ":dr", $customer_address);
-
-            // ... (baki execute code sama) ...
 
             if (oci_execute($stid_ins, OCI_COMMIT_ON_SUCCESS)) {
                 $showAlert = true;
