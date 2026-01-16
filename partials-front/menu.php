@@ -22,35 +22,77 @@ include('config/constants.php');
     <title>MCOS</title>
     <link rel="icon" type="image/png" href="images/mcoslogo.png">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Centering the content away from screen borders */
+        /* General wrapper for all pages */
+        .wrapper {
+            width: 85%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Specific instructions for the navbar's wrapper */
+        .navbar .wrapper {
+            display: flex;
+            justify-content: space-between;
+            /* Pushes Logo left, Menu right */
+            align-items: center;
+            padding: 15px 0;
+            /* Vertical spacing */
+        }
+
+        .menu ul {
+            list-style: none;
+            display: flex;
+            gap: 25px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .menu ul li a {
+            color: #2f3542;
+            font-weight: bold;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .menu ul li a:hover {
+            color: #ff4757;
+        }
+
+        .logout-btn {
+            color: #ff4757 !important;
+        }
+    </style>
 </head>
 
 <body>
     <section class="navbar">
-        <div class="container">
+        <div class="wrapper">
             <div class="logo">
                 <a href="<?php echo SITEURL; ?>" title="Logo">
-                    <img src="images/mcoslogo.png" alt="Restaurant Logo" class="img-responsive">
+                    <img src="images/mcoslogo.png" alt="Restaurant Logo" style="width: 100px;">
                 </a>
             </div>
 
-            <div class="menu text-right">
+            <div class="menu">
                 <ul>
                     <li><a href="<?php echo SITEURL; ?>">Home</a></li>
-                    <!--<li><a href="<?php echo SITEURL; ?>categories.php">Categories</a></li>-->
                     <li><a href="<?php echo SITEURL; ?>foods.php">Menu</a></li>
-
                     <?php
                     if (!isset($_SESSION["u_id"])) {
                         echo '<li><a href="login.php">Login</a></li>';
                     } else {
                         echo '<li><a href="myorders.php">My Orders</a></li>';
                         echo '<li><a href="profile.php">Profile</a></li>';
-                        echo '<li><a href="logout.php">Logout</a></li>';
+                        echo '<li><a href="logout.php" class="logout-btn">Logout</a></li>';
                     }
                     ?>
                 </ul>
             </div>
-            <div class="clearfix"></div>
         </div>
     </section>
 

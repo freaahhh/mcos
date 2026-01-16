@@ -118,18 +118,18 @@ if (isset($_POST['update_cust'])) {
 
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <h3>Update Personal Info</h3>
+                <h3>Update Personal Info</h3><br>
                 <form method="POST">
-                    <label>First Name</label>
+                    <label style="display:block; margin-bottom:8px; font-weight: 600;">First Name</label>
                     <input type="text" name="fname" value="<?php echo $row['CUST_FIRST_NAME']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
 
-                    <label>Last Name</label>
+                    <label style="display:block; margin-bottom:8px; font-weight: 600;">Last Name</label>
                     <input type="text" name="lname" value="<?php echo $row['CUST_LAST_NAME']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
 
-                    <label>Contact No</label>
+                    <label style="display:block; margin-bottom:8px; font-weight: 600;">Contact No</label>
                     <input type="text" name="contact" value="<?php echo $row['CUST_CONTACT_NO']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
 
-                    <label>Dorm</label>
+                    <label style="display:block; margin-bottom:8px; font-weight: 600;">Dorm</label>
                     <input type="text" name="dorm" value="<?php echo $row['CUST_DORM']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
 
                     <input type="hidden" name="bank" value="<?php echo $row['BANK_NAME']; ?>">
@@ -140,7 +140,7 @@ if (isset($_POST['update_cust'])) {
             </div>
 
             <div style="flex: 1; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <h3>Update Billing</h3>
+                <h3>Update Billing</h3><br>
                 <form method="POST">
                     <input type="hidden" name="fname" value="<?php echo $row['CUST_FIRST_NAME']; ?>">
                     <input type="hidden" name="lname" value="<?php echo $row['CUST_LAST_NAME']; ?>">
@@ -148,7 +148,7 @@ if (isset($_POST['update_cust'])) {
                     <input type="hidden" name="dorm" value="<?php echo $row['CUST_DORM']; ?>">
 
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Select Bank</label>
+                        <label style="display:block; margin-bottom:8px; font-weight: 600;">Select Bank</label>
                         <select name="bank_name" class="form-control" style="width:100%; padding:10px;" required>
                             <option value="Maybank">Maybank</option>
                             <option value="CIMB Bank">CIMB Bank</option>
@@ -156,7 +156,7 @@ if (isset($_POST['update_cust'])) {
                             <option value="TNG eWallet">TNG eWallet</option>
                         </select>
                     </div>
-                    <label>Account Number</label>
+                    <label style="display:block; margin-bottom:8px; font-weight: 600;">Account Number</label>
                     <input type="text" name="acc" value="<?php echo $row['BANK_ACCOUNT']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
 
                     <button type="submit" name="update_cust" style="background:#ff4757; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">Save Billing Info</button>

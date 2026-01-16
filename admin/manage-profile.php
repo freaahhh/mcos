@@ -1,11 +1,11 @@
-<?php 
+<?php
 ob_start();
-include('partials/menu.php'); 
+include('partials/menu.php');
 
 $staff_id = $_SESSION['u_id'];
 
 // --- 1. PROCESS PROFILE UPDATE (Logic must be before SELECT) ---
-if(isset($_POST['update_profile'])) {
+if (isset($_POST['update_profile'])) {
     $fname = $_POST['fname'];
     $lname = $_POST['lname'];
     $contact = $_POST['contact'];
@@ -16,14 +16,14 @@ if(isset($_POST['update_profile'])) {
                    STAFF_LAST_NAME = :lname, 
                    STAFF_CONTACT_NO = :contact 
                    WHERE STAFF_ID = :id";
-    
+
     $stmt_update = oci_parse($conn, $sql_update);
     oci_bind_by_name($stmt_update, ":fname", $fname);
     oci_bind_by_name($stmt_update, ":lname", $lname);
     oci_bind_by_name($stmt_update, ":contact", $contact);
     oci_bind_by_name($stmt_update, ":id", $staff_id);
-    
-    if(oci_execute($stmt_update)) {
+
+    if (oci_execute($stmt_update)) {
         $_SESSION['msg'] = "<div style='color: #2ecc71; background: #e8f8f0; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>Profile updated successfully!</div>";
         header("location: manage-profile.php");
         exit();
@@ -62,7 +62,16 @@ $emp_type = ($is_full_time > 0) ? "Full-Time Staff" : (($is_part_time > 0) ? "Pa
 
 // --- 4. FETCH WORK LOGS ---
 // Oracle uses FETCH FIRST syntax for limiting rows
-$sql_logs = "SELECT * FROM WORK_LOG WHERE STAFF_ID = :id ORDER BY WORK_DATE DESC FETCH FIRST 5 ROWS ONLY";
+// --- 4. FETCH WORK LOGS ---
+$sql_logs = "SELECT 
+                TO_CHAR(WORK_DATE, 'DD-Mon-YYYY') AS WORK_DATE_FORMATTED, 
+                DAY_PRESENT, 
+                HOURS_WORKED 
+             FROM WORK_LOG 
+             WHERE STAFF_ID = :id 
+             ORDER BY WORK_DATE DESC 
+             FETCH FIRST 5 ROWS ONLY";
+
 $stmt_logs = oci_parse($conn, $sql_logs);
 oci_bind_by_name($stmt_logs, ":id", $staff_id);
 oci_execute($stmt_logs);
@@ -71,8 +80,11 @@ oci_execute($stmt_logs);
 <div class="main-content" style="background-color: #f1f2f6; padding: 3% 0;">
     <div class="wrapper" style="max-width: 1100px; margin: 0 auto;">
         <h1 style="margin-bottom: 25px; color: #2f3542;">My Profile (Staff)</h1>
-        
-        <?php if(isset($_SESSION['msg'])) { echo $_SESSION['msg']; unset($_SESSION['msg']); } ?>
+
+        <?php if (isset($_SESSION['msg'])) {
+            echo $_SESSION['msg'];
+            unset($_SESSION['msg']);
+        } ?>
 
         <div style="background: #2f3542; color: white; padding: 35px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #57606f; padding-bottom: 20px; margin-bottom: 25px;">
@@ -83,11 +95,11 @@ oci_execute($stmt_logs);
                 </div>
                 <div style="text-align: right;">
                     <h3 style="color: #ff4757; margin-top: 0;">Supervisor Details</h3>
-                    <?php 
+                    <?php
                     // Fixed check for Oracle UPPERCASE keys
-                    if(isset($row['SUPERVISOR_ID']) && $row['SUPERVISOR_ID'] != null): 
+                    if (isset($row['SUPERVISOR_ID']) && $row['SUPERVISOR_ID'] != null):
                     ?>
-                        <p style="margin: 5px 0;"><strong>Name:</strong> <?php echo $row['SUPER_FNAME'].' '.$row['SUPER_LNAME']; ?></p>
+                        <p style="margin: 5px 0;"><strong>Name:</strong> <?php echo $row['SUPER_FNAME'] . ' ' . $row['SUPER_LNAME']; ?></p>
                         <p style="margin: 5px 0;"><strong>Contact:</strong> <?php echo $row['SUPER_CONTACT']; ?></p>
                     <?php else: ?>
                         <p>Administrator (Direct Access)</p>
@@ -105,19 +117,21 @@ oci_execute($stmt_logs);
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
-                        $log_count = 0;
-                        while($log = oci_fetch_array($stmt_logs, OCI_ASSOC)): 
+                    <?php
+                    $log_count = 0;
+                    while ($log = oci_fetch_array($stmt_logs, OCI_ASSOC)):
                         $log_count++;
                     ?>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <td style="padding: 12px;"><?php echo $log['WORK_DATE']; ?></td>
+                            <td style="padding: 12px;"><?php echo $log['WORK_DATE_FORMATTED']; ?></td>
                             <td style="padding: 12px;"><?php echo $log['DAY_PRESENT']; ?></td>
                             <td style="padding: 12px;"><?php echo number_format($log['HOURS_WORKED'], 2); ?> hrs</td>
                         </tr>
                     <?php endwhile; ?>
-                    <?php if($log_count == 0): ?>
-                        <tr><td colspan="3" style="padding: 20px; text-align: center; color: #a4b0be;">No work logs found.</td></tr>
+                    <?php if ($log_count == 0): ?>
+                        <tr>
+                            <td colspan="3" style="padding: 20px; text-align: center; color: #a4b0be;">No work logs found.</td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -146,9 +160,9 @@ oci_execute($stmt_logs);
     </div>
 </div>
 
-<?php 
+<?php
 // Final cleanup of statements
 oci_free_statement($stmt);
 oci_free_statement($stmt_logs);
-include('partials/footer.php'); 
+include('partials/footer.php');
 ?>

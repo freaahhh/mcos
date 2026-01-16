@@ -17,50 +17,50 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
-                        // Oracle SQL: Standard select from the CUSTOMER table
-                        $sql = "SELECT * FROM CUSTOMER ORDER BY CUST_ID ASC";
-                        $stmt = oci_parse($conn, $sql);
-                        oci_execute($stmt);
+                    <?php
+                    // Oracle SQL: Standard select from the CUSTOMER table
+                    $sql = "SELECT * FROM CUSTOMER ORDER BY CUST_ID ASC";
+                    $stmt = oci_parse($conn, $sql);
+                    oci_execute($stmt);
 
-                        $sn = 1;
-                        $customer_exists = false;
+                    $sn = 1;
+                    $customer_exists = false;
 
-                        // Fetch using OCI_ASSOC and UPPERCASE keys
-                        while($rows = oci_fetch_array($stmt, OCI_ASSOC)) {
-                            $customer_exists = true;
-                            $id = $rows['CUST_ID'];
-                            $full_name = $rows['CUST_FIRST_NAME']." ".$rows['CUST_LAST_NAME'];
-                            $dorm = $rows['CUST_DORM'] ?? 'Not Set';
-                            $contact = $rows['CUST_CONTACT_NO'] ?? 'N/A';
-                            
-                            // Handling potential nulls for bank info
-                            $bank_name = $rows['BANK_NAME'] ?? '';
-                            $bank_acc = $rows['BANK_ACCOUNT'] ?? '';
-                            $bank = !empty($bank_name) ? $bank_name." (".$bank_acc.")" : 'No Bank Info';
+                    // Fetch using OCI_ASSOC and UPPERCASE keys
+                    while ($rows = oci_fetch_array($stmt, OCI_ASSOC)) {
+                        $customer_exists = true;
+                        $id = $rows['CUST_ID'];
+                        $full_name = $rows['CUST_FIRST_NAME'] . " " . $rows['CUST_LAST_NAME'];
+                        $dorm = $rows['CUST_DORM'] ?? 'Not Set';
+                        $contact = $rows['CUST_CONTACT_NO'] ?? 'N/A';
+
+                        // Handling potential nulls for bank info
+                        $bank_name = $rows['BANK_NAME'] ?? '';
+                        $bank_acc = $rows['BANK_ACCOUNT'] ?? '';
+                        $bank = !empty($bank_name) ? $bank_name . " (" . $bank_acc . ")" : 'No Bank Info';
                     ?>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 15px;"><?php echo $sn++; ?>.</td>
-                        <td style="padding: 15px; font-weight: bold;"><?php echo $full_name; ?></td>
-                        <td style="padding: 15px;"><?php echo $dorm; ?></td>
-                        <td style="padding: 15px;"><?php echo $contact; ?></td>
-                        <td style="padding: 15px; font-size: 0.85rem; color: #a4b0be;"><?php echo $bank; ?></td>
-                        <td style="padding: 15px;">
-                            <?php if($is_admin): ?>
-                                <a href="delete-customer.php?id=<?php echo $id; ?>" class="btn-action" style="background: #ff4757; padding: 5px 10px; border-radius: 5px; color:white; text-decoration:none; font-size:0.8rem;">Remove</a>
-                            <?php else: ?>
-                                <span style="font-size: 0.8rem; color: #57606f;">View Only</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php 
-                            }
-                        
-                        oci_free_statement($stmt);
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 15px;"><?php echo $sn++; ?>.</td>
+                            <td style="padding: 15px; font-weight: bold;"><?php echo $full_name; ?></td>
+                            <td style="padding: 15px;"><?php echo $dorm; ?></td>
+                            <td style="padding: 15px;"><?php echo $contact; ?></td>
+                            <td style="padding: 15px; font-size: 0.85rem; color: #a4b0be;"><?php echo $bank; ?></td>
+                            <td style="padding: 15px;">
+                                <?php if ($is_admin): ?>
+                                    <a href="delete-customer.php?id=<?php echo $id; ?>" class="btn-action" title="Delete" onclick="return confirm('Are you sure you want to delete this customer?')"><img src="../images/icons/delete.png" alt="Delete">
+                                    <?php else: ?>
+                                        <span style="font-size: 0.8rem; color: #57606f;">View Only</span>
+                                    <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php
+                    }
 
-                        if(!$customer_exists) {
-                            echo "<tr><td colspan='6' style='padding:20px; text-align:center;'>No registered customers found.</td></tr>";
-                        }
+                    oci_free_statement($stmt);
+
+                    if (!$customer_exists) {
+                        echo "<tr><td colspan='6' style='padding:20px; text-align:center;'>No registered customers found.</td></tr>";
+                    }
                     ?>
                 </tbody>
             </table>

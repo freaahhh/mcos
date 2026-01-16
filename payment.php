@@ -64,7 +64,7 @@ if (isset($_POST['confirm_payment'])) {
     if ($valid_upload) {
         try {
             $sql1 = "INSERT INTO ORDERS (ORDER_ID, GRAND_TOTAL, DELIVERY_CHARGE, CUST_ID, STAFF_ID)
-                     VALUES (ORDER_SEQ.NEXTVAL, :grand_total, :delivery, :cust_id, 2)
+                     VALUES (ORDER_SEQ.NEXTVAL, :grand_total, :delivery, :cust_id, NULL)
                      RETURNING ORDER_ID INTO :order_id";
 
             $stid1 = oci_parse($conn, $sql1);

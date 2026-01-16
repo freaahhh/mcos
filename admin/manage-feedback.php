@@ -62,9 +62,7 @@
                             <td style="padding: 15px;">
                                 <?php if ($is_admin): ?>
                                     <a href="delete-feedback.php?id=<?php echo $f_id; ?>"
-                                        style="color: #ff4757; text-decoration: none; font-weight: bold; font-size: 0.85rem;"
-                                        onclick="return confirm('Delete this feedback permanently?')">
-                                        Delete
+                                        class="btn-action" title="Delete" onclick="return confirm('Are you sure you want to delete this staff feedback?')"><img src="../images/icons/delete.png" alt="Delete">
                                     </a>
                                 <?php else: ?>
                                     <span style="color: #57606f; font-size: 0.8rem;">View Only</span>
