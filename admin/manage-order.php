@@ -11,6 +11,7 @@
                         <th style="padding: 15px;">ID</th>
                         <th style="padding: 15px;">Customer</th>
                         <th style="padding: 15px;">Total</th>
+                        <th style="padding: 15px;">Date & Time</th>
                         <th style="padding: 15px;">Status</th>
                         <th style="padding: 15px;">Staff Handled</th>
                         <th style="padding: 15px;">Receipt</th>
@@ -19,37 +20,41 @@
                 </thead>
                 <tbody>
                     <?php
-                    // Oracle SQL: Table name 'ORDERS' used to avoid reserved word conflict
-                    $sql = "SELECT o.ORDER_ID, c.CUST_USERNAME, o.GRAND_TOTAL, d.DELIVERY_STATUS, 
-                                       p.PAYMENT_STATUS, p.RECEIPT_FILE, s.STAFF_USERNAME
-                                FROM ORDERS o 
-                                JOIN CUSTOMER c ON o.CUST_ID = c.CUST_ID 
-                                LEFT JOIN DELIVERY d ON o.ORDER_ID = d.ORDER_ID 
-                                LEFT JOIN PAYMENT p ON o.ORDER_ID = p.ORDER_ID 
-                                LEFT JOIN STAFF s ON o.STAFF_ID = s.STAFF_ID
-                                ORDER BY o.ORDER_ID DESC";
+                    $sql = "SELECT o.ORDER_ID, c.CUST_USERNAME, o.GRAND_TOTAL, 
+                                TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE, 
+                                d.DELIVERY_STATUS, p.PAYMENT_STATUS, p.RECEIPT_FILE, s.STAFF_USERNAME
+                            FROM ORDERS o 
+                            JOIN CUSTOMER c ON o.CUST_ID = c.CUST_ID 
+                            LEFT JOIN DELIVERY d ON o.ORDER_ID = d.ORDER_ID 
+                            LEFT JOIN PAYMENT p ON o.ORDER_ID = p.ORDER_ID 
+                            LEFT JOIN STAFF s ON o.STAFF_ID = s.STAFF_ID
+                            ORDER BY o.ORDER_ID DESC";
 
                     $stmt = oci_parse($conn, $sql);
                     oci_execute($stmt);
 
                     $has_data = false;
 
-                    // Fetching rows; Oracle returns keys in UPPERCASE
                     while ($row = oci_fetch_array($stmt, OCI_ASSOC)) {
                         $has_data = true;
                         $order_id = $row['ORDER_ID'];
                         $customer = $row['CUST_USERNAME'];
                         $total = $row['GRAND_TOTAL'];
+                        // Fetch and format the date
+                        $order_date = $row['ORDER_DATE'];
                         $status = $row['DELIVERY_STATUS'] ?? "Ordered";
                         $handled_by = $row['STAFF_USERNAME'] ?? "<i>Unassigned</i>";
 
-                        // FIX: Using null coalescing operator to prevent "Undefined array key" warning
                         $receipt = $row['RECEIPT_FILE'] ?? "";
                     ?>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <td style="padding: 15px; font-weight: bold; color: #ff4757;">#<?php echo $order_id; ?></td>
                             <td style="padding: 15px;"><?php echo $customer; ?></td>
                             <td style="padding: 15px;">RM <?php echo number_format($total, 2); ?></td>
+                            <td style="padding: 15px; font-size: 0.85rem;">
+                                <?php echo date('d M Y', strtotime($order_date)); ?><br>
+                                <small style="color: #a4b0be;"><?php echo date('h:i A', strtotime($order_date)); ?></small>
+                            </td>
                             <td style="padding: 15px;">
                                 <?php
                                 $color = ($status == 'Delivered') ? '#2ecc71' : (($status == 'Cancelled') ? '#ff4757' : '#e67e22');

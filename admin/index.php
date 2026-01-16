@@ -150,21 +150,26 @@
 // --- Data Preparation for JS Charts ---
 
 // 1. Get Revenue for last 7 days
-$days = [];
-$revs = [];
 for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i days"));
-    $label = date('D', strtotime($date));
+    // PHP only handles the Label (Mon, Tue, etc.)
+    $label = date('D', strtotime("-$i days"));
 
-    // Oracle date comparison using TO_DATE
-    $q_str = "SELECT SUM(GRAND_TOTAL) as TOTAL FROM ORDERS WHERE TRUNC(ORDER_DATE) = TO_DATE(:target_date, 'YYYY-MM-DD')";
+    // SQL calculates the date based on SYSDATE minus the offset
+    // We use TRUNC to make sure it's exactly that day (12:00 AM)
+    $q_str = "SELECT SUM(GRAND_TOTAL) AS TOTAL_REV 
+              FROM ORDERS 
+              WHERE TRUNC(ORDER_DATE) = TRUNC(SYSDATE - $i)";
+
     $stmt_q = oci_parse($conn, $q_str);
-    oci_bind_by_name($stmt_q, ":target_date", $date);
     oci_execute($stmt_q);
 
-    $val = oci_fetch_array($stmt_q, OCI_ASSOC)['TOTAL'] ?? 0;
+    $row = oci_fetch_array($stmt_q, OCI_ASSOC);
+    $val = (isset($row['TOTAL_REV']) && $row['TOTAL_REV'] !== null) ? (float)$row['TOTAL_REV'] : 0;
+
     $days[] = $label;
     $revs[] = $val;
+
+    oci_free_statement($stmt_q);
 }
 
 // 2. Get Status Counts
