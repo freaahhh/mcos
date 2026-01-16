@@ -162,6 +162,12 @@ if (isset($_POST['confirm_payment'])) {
             </div>
 
             <form action="" method="POST" enctype="multipart/form-data">
+                <!--Scan QR to pay -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="font-weight:bold; display: block; margin-bottom: 10px;">Scan QR to Pay</label>
+                    <img src="images/mcosqr.jpeg" alt="QR" class="img-responsive" style=" width: 250px; height: auto; border-radius: 8px; border: 1px solid #ccc; display: inline-block;">
+                </div>
+                <!--End of QR-->
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="font-weight:bold;">Select Bank</label>
                     <select name="bank_name" class="form-control" style="width:100%; padding:10px;" required>
