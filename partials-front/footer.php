@@ -41,8 +41,11 @@
 
     .logo {
         height: 65px;
-        /* adjust ikut taste */
         width: auto;
+        background-color: transparent !important;
+        /* Forces transparency */
+        border: none !important;
+        /* Removes any accidental borders */
     }
 
     .footer {
