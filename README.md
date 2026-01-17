@@ -64,7 +64,7 @@ git clone https://github.com/liyanawr/mcos.git
 * Import the provided `.sql` file from the `/database` folder.
 
 3. **Run**:
-Visit `http://localhost/mcos/` in your browser.
+Visit `http://localhost/mcos/login.php` in your browser.
 
 # Latest update/issue (current date: 23/12/2025)
 - incomplete database (data and images/illustrations)
