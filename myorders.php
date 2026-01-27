@@ -10,7 +10,10 @@ $customer_id = $_SESSION['u_id'];
 $orders = []; // Initialize as empty array
 $sn = 1;      // Initialize serial number
 
-// Fetch Orders + Delivery Status (Use LEFT JOIN)
+
+
+//Fetch Orders + Delivery Status (Use LEFT JOIN)
+
 $sql = "SELECT o.ORDER_ID, 
                TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED, 
                o.DELIVERY_CHARGE, 
@@ -73,7 +76,7 @@ oci_free_statement($stid);
                                 <td style="padding: 15px;"><?php echo $sn++; ?>.</td>
                                 <td style="padding: 15px; font-weight: bold; color: #ff4757;">#<?php echo $order_id; ?></td>
                                 <td style="padding: 15px;">
-                                    <?php echo $order_date;?>
+                                    <?php echo $order_date; ?>
                                 </td>
                                 <td style="padding: 15px;">
                                     <?php echo number_format($total, 2); ?>

@@ -26,7 +26,7 @@ if ($type == 'weekly') {
                 WHERE TO_CHAR(ORDER_DATE, 'MM-YYYY') = TO_CHAR(SYSDATE, 'MM-YYYY') 
                 ORDER BY ORDER_DATE DESC";
 } elseif ($type == 'products') {
-    // SQL Produk kekal sama sebab tiada kolum Date yang perlu diproses
+
     $title = "High-Performance Products (Star Items)";
     $sql = "SELECT m.MENU_NAME, SUM(om.ORDER_QUANTITY) as TOTAL_VAL, COUNT(om.ORDER_ID) as SUB_COUNT 
                 FROM ORDER_MENU om 
@@ -35,7 +35,7 @@ if ($type == 'weekly') {
                 HAVING SUM(om.ORDER_QUANTITY) > 5 
                 ORDER BY TOTAL_VAL DESC";
 } elseif ($type == 'customers') {
-    // SQL Customer kekal sama
+
     $title = "Frequent Customer Analytics (Loyalty Report)";
     $sql = "SELECT c.CUST_USERNAME, COUNT(o.ORDER_ID) as TOTAL_VAL, SUM(o.GRAND_TOTAL) as SUB_COUNT 
                 FROM ORDERS o 
@@ -45,17 +45,14 @@ if ($type == 'weekly') {
                 ORDER BY TOTAL_VAL DESC";
 } elseif ($type == 'salary') {
     $title = "Staff Payroll & Performance Audit";
-    // We use CASE to decide which salary to show
     $sql = "SELECT 
             s.STAFF_FIRST_NAME || ' ' || s.STAFF_LAST_NAME AS FULL_NAME, 
             s.STAFF_TYPE, 
-            stats.TOTAL_VAL, -- This is Total Hours
-            stats.SUB_COUNT, -- This is Total Days Logged
+            stats.TOTAL_VAL, 
+            stats.SUB_COUNT, 
             CASE 
                 WHEN s.STAFF_TYPE = 'Part-Time' THEN (stats.TOTAL_VAL * pt.HOURLY_SALARY)
                 WHEN s.STAFF_TYPE = 'Full-Time' THEN 
-                    -- Formula: (Monthly Salary / 30) * Days Logged
-                    -- We use LEAST to make sure they don't get MORE than their salary if they log > 30 days
                     LEAST(ft.MONTHLY_SALARY, (ft.MONTHLY_SALARY / 30) * stats.SUB_COUNT)
                 ELSE 0 
             END AS CALCULATED_SALARY
@@ -63,14 +60,43 @@ if ($type == 'weekly') {
         JOIN (
             SELECT STAFF_ID, 
                    SUM(HOURS_WORKED) as TOTAL_VAL, 
-                   COUNT(DISTINCT WORK_DATE) as SUB_COUNT -- Use DISTINCT to count unique days
+                   COUNT(DISTINCT WORK_DATE) as SUB_COUNT 
             FROM WORK_LOG
             GROUP BY STAFF_ID
         ) stats ON s.STAFF_ID = stats.STAFF_ID
         LEFT JOIN FULL_TIME ft ON s.STAFF_ID = ft.STAFF_ID
         LEFT JOIN PART_TIME pt ON s.STAFF_ID = pt.STAFF_ID
         ORDER BY stats.TOTAL_VAL DESC";
+} elseif ($type == 'dorm_stats') {
+    $title = "Dormitory Sales Analysis";
+    $sql = "SELECT M.MENU_NAME, C.CUST_DORM, 
+            SUM(OM.ORDER_QUANTITY) AS TOTAL_QUANTITY_SOLD,  
+            SUM(OM.SUB_TOTAL) AS TOTAL_REVENUE 
+            FROM ORDER_MENU OM  
+            JOIN MENU M ON OM.MENU_ID = M.MENU_ID  
+            JOIN ORDERS O ON O.ORDER_ID = OM.ORDER_ID 
+            JOIN CUSTOMER C ON C.CUST_ID = O.CUST_ID 
+            GROUP BY M.MENU_NAME, C.CUST_DORM 
+            ORDER BY M.MENU_NAME ASC, TOTAL_QUANTITY_SOLD DESC";
+} elseif ($type == 'worklog') {
+    $title = "Staff Work Log Summary (Monthly)";
+    $sql = "SELECT 
+                s.STAFF_FIRST_NAME || ' ' || s.STAFF_LAST_NAME AS STAFF_NAME,
+                s.STAFF_TYPE,
+                NVL(TO_CHAR(w.WORK_DATE, 'YYYY-MM'), 'No Record') AS WORK_MONTH,
+                NVL(SUM(w.HOURS_WORKED), 0) AS TOTAL_HOURS,
+                COUNT(DISTINCT w.WORK_DATE) AS TOTAL_DAYS,
+                COUNT(d.DELIVERY_ID) AS TOTAL_DELIVERIES
+            FROM STAFF s
+            LEFT JOIN WORK_LOG w ON s.STAFF_ID = w.STAFF_ID
+            LEFT JOIN DELIVERY d ON s.STAFF_ID = d.STAFF_ID
+            GROUP BY 
+                s.STAFF_FIRST_NAME || ' ' || s.STAFF_LAST_NAME,
+                s.STAFF_TYPE,
+                TO_CHAR(w.WORK_DATE, 'YYYY-MM')
+            ORDER BY STAFF_NAME, WORK_MONTH";
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -133,6 +159,35 @@ if ($type == 'weekly') {
             font-size: 0.75rem;
         }
 
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-completed {
+            background-color: #2ecc71;
+        }
+
+        .status-transit {
+            background-color: #3498db;
+        }
+
+        .status-awaiting {
+            background-color: #f39c12;
+        }
+
+        .status-pending {
+            background-color: #e74c3c;
+        }
+
+        .status-processing {
+            background-color: #95a5a6;
+        }
+
+
         @media print {
             .print-btn {
                 display: none;
@@ -157,14 +212,31 @@ if ($type == 'weekly') {
                     <th>Product Name</th>
                     <th>Total Units Sold (Aggregated)</th>
                     <th>Order Occurrences</th>
+
                 <?php elseif ($type == 'customers'): ?>
                     <th>Customer Username</th>
                     <th>Total Orders (Aggregated)</th>
                     <th>Total Revenue Contribution</th>
+
                 <?php elseif ($type == 'salary'): ?>
                     <th>Staff Name</th>
                     <th>Work Hours / Type</th>
                     <th>Calculated Salary</th>
+
+                <?php elseif ($type == 'dorm_stats'): ?>
+                    <th>Menu Item</th>
+                    <th>Dormitory</th>
+                    <th>Quantity Sold</th>
+                    <th>Revenue Generated</th>
+
+                <?php elseif ($type == 'worklog'): ?>
+                    <th>Staff Name</th>
+                    <th>Staff Type</th>
+                    <th>Work Month</th>
+                    <th>Total Hours Worked</th>
+                    <th>Total Days Logged</th>
+                    <th>Total Deliveries</th>
+
                 <?php else: ?>
                     <th>Order ID</th>
                     <th>Transaction Date</th>
@@ -182,24 +254,36 @@ if ($type == 'weekly') {
             while ($row = oci_fetch_array($stmt, OCI_ASSOC)):
             ?>
                 <tr>
-                    <?php if ($type == 'salary'): ?>
+                    <?php if ($type == 'worklog'): ?>
+
+                        <td><?php echo $row['STAFF_NAME']; ?></td>
+                        <td><?php echo $row['STAFF_TYPE']; ?></td>
+                        <td><?php echo $row['WORK_MONTH']; ?></td>
+                        <td style="font-weight:bold;">
+                            <?php echo $row['TOTAL_HOURS'] ?? 0; ?> hrs
+                        </td>
+                        <td><?php echo $row['TOTAL_DAYS'] ?? 0; ?> days</td>
+                        <td><?php echo $row['TOTAL_DELIVERIES'] ?? 0; ?></td>
+
+                    <?php elseif ($type == 'salary'): ?>
+
                         <td>
                             <?php echo $row['FULL_NAME']; ?>
                             <span class="badge" style="background:#3498db;"><?php echo $row['STAFF_TYPE']; ?></span>
                         </td>
                         <td>
                             <strong><?php echo $row['TOTAL_VAL']; ?> hrs</strong>
-                            <div style="font-size: 0.75rem; color: #747d8c;"><?php echo $row['SUB_COUNT']; ?> days logged</div>
+                            <div style="font-size: 0.75rem; color: #747d8c;">
+                                <?php echo $row['SUB_COUNT']; ?> days logged
+                            </div>
                         </td>
-                        <td style="padding: 15px; font-weight: bold; color: #2ed573;">
+                        <td style="font-weight: bold; color: #2ed573;">
                             RM <?php echo number_format($row['CALCULATED_SALARY'], 2); ?>
                         </td>
+                        <?php $grand_total += $row['CALCULATED_SALARY']; ?>
 
-                        <?php
-                        // ADD THIS LINE BELOW TO FIX THE TOTAL
-                        $grand_total += $row['CALCULATED_SALARY'];
-                        ?>
                     <?php elseif ($type == 'products' || $type == 'customers'): ?>
+
                         <td>
                             <?php echo ($type == 'products') ? $row['MENU_NAME'] : $row['CUST_USERNAME']; ?>
                             <span class="badge">Verified</span>
@@ -216,18 +300,25 @@ if ($type == 'weekly') {
                             ?>
                         </td>
 
+                    <?php elseif ($type == 'dorm_stats'): ?>
+                        <td style="font-weight: bold; color: #2f3542;"><?php echo $row['MENU_NAME']; ?></td>
+                        <td>
+                            <span class="badge" style="background: #e1b12c; font-size: 0.9em;"><?php echo $row['CUST_DORM']; ?></span>
+                        </td>
+                        <td><?php echo $row['TOTAL_QUANTITY_SOLD']; ?> Units</td>
+                        <td style="font-weight: bold;">RM <?php echo number_format($row['TOTAL_REVENUE'], 2); ?></td>
+                        <?php $grand_total += $row['TOTAL_REVENUE']; ?>
                     <?php else: ?>
                         <td>#<?php echo $row['ORDER_ID']; ?></td>
-                        <td>
-                            <?php
-                            // TUKAR FORMAT TARIKH DI SINI
-                            echo date('d M Y', strtotime($row['ORDER_DATE_FORMATTED']));
-                            ?>
-                        </td>
+                        <td><?php echo date('d M Y', strtotime($row['ORDER_DATE_FORMATTED'])); ?></td>
                         <td>RM <?php echo number_format($row['DELIVERY_CHARGE'] ?? 0, 2); ?></td>
-                        <td style="font-weight: bold;">RM <?php echo number_format($row['GRAND_TOTAL'], 2); ?></td>
+                        <td style="font-weight: bold;">
+                            RM <?php echo number_format($row['GRAND_TOTAL'], 2); ?>
+                        </td>
                         <?php $grand_total += $row['GRAND_TOTAL']; ?>
+
                     <?php endif; ?>
+
                 </tr>
             <?php endwhile;
             oci_free_statement($stmt); ?>
@@ -236,9 +327,25 @@ if ($type == 'weekly') {
 
     <div class="summary-box">
         <h3 style="margin: 0;">
-            <?php echo ($type == 'products') ? "Total Data Rows Aggregated" : "Report Net Total:"; ?>
+            <?php
+            if ($type == 'products') {
+                echo "Total Data Rows Aggregated";
+            } elseif ($type == 'worklog') {
+                echo "Total Staff Records";
+            } else {
+                echo "Report Net Total:";
+            }
+            ?>
             <span style="color: #2ecc71; margin-left: 15px;">
-                <?php echo ($type == 'products') ? "Success" : "RM " . number_format($grand_total, 2); ?>
+                <?php
+                if ($type == 'products') {
+                    echo "Success";
+                } elseif ($type == 'worklog') {
+                    echo "Summary Generated";
+                } else {
+                    echo "RM " . number_format($grand_total, 2);
+                }
+                ?>
             </span>
         </h3>
     </div>

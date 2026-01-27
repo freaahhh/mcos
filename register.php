@@ -379,7 +379,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="logbox">
                             <i class="fa fa-home"></i>
                             <div class="linebox"></div>
-                            <input name="customer_address" type="text" placeholder="Dorm / Address" class="inputbox" required>
+
+                            <select name="customer_address" class="inputbox" required style="background: transparent; border: none; width: 100%; color: #555; outline: none; cursor: pointer;">
+                                <option value="" disabled selected>Select Dorm / Address</option>
+                                <option value="3A">3A</option>
+                                <option value="3B">3B</option>
+                                <option value="4A">4A</option>
+                                <option value="4B">4B</option>
+                                <option value="Pejabat">Pejabat Melati</option>
+                                <option value="Non-Resident">Non-Resident</option>
+                            </select>
                         </div>
 
                         <input type="submit" value="Create Account" class="btnLogin">

@@ -129,8 +129,19 @@ if (isset($_POST['update_cust'])) {
                     <label style="display:block; margin-bottom:8px; font-weight: 600;">Contact No</label>
                     <input type="text" name="contact" value="<?php echo $row['CUST_CONTACT_NO']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
 
-                    <label style="display:block; margin-bottom:8px; font-weight: 600;">Dorm</label>
-                    <input type="text" name="dorm" value="<?php echo $row['CUST_DORM']; ?>" style="width:100%; margin-bottom:15px; padding:10px;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display:block; margin-bottom:8px; font-weight: 600;">Dorm</label>
+                        <select name="dorm" class="form-control" style="width:100%; padding:10px;" required>
+                            <option value="" disabled>Select Dorm / Address</option>
+                            <option value="3A" <?= ($row['CUST_DORM'] == '3A') ? 'selected' : ''; ?>>3A</option>
+                            <option value="3B" <?= ($row['CUST_DORM'] == '3B') ? 'selected' : ''; ?>>3B</option>
+                            <option value="4A" <?= ($row['CUST_DORM'] == '4A') ? 'selected' : ''; ?>>4A</option>
+                            <option value="4B" <?= ($row['CUST_DORM'] == '4B') ? 'selected' : ''; ?>>4B</option>
+                            <option value="Pejabat" <?= ($row['CUST_DORM'] == 'Pejabat') ? 'selected' : ''; ?>>Pejabat Melati</option>
+                            <option value="Non-Resident" <?= ($row['CUST_DORM'] == 'Non-Resident') ? 'selected' : ''; ?>>Non-Resident</option>
+                        </select>
+                    </div>
+
 
                     <input type="hidden" name="bank" value="<?php echo $row['BANK_NAME']; ?>">
                     <input type="hidden" name="acc" value="<?php echo $row['BANK_ACCOUNT']; ?>">

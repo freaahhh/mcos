@@ -113,8 +113,8 @@
 
                 <div style="flex: 1; min-width: 250px; border: 1px solid #f1f2f6; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;" onmouseover="this.style.borderColor='#ff4757'" onmouseout="this.style.borderColor='#f1f2f6'">
                     <div>
-                        <strong style="display: block; color: #2f3542;">Product Insights</strong>
-                        <span style="font-size: 0.8rem; color: #a4b0be;">Best-seller analytics (High Demand)</span>
+                        <strong style="display: block; color: #2f3542;">High Demand Menu</strong>
+                        <span style="font-size: 0.8rem; color: #a4b0be;">Report of best-seller menu</span>
                     </div>
                     <a href="print-report.php?type=products" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none; display: flex; align-items: center; justify-content: center;">
                         <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
@@ -137,6 +137,26 @@
                         <span style="font-size: 0.8rem; color: #a4b0be;">Payroll Summary</span>
                     </div>
                     <a href="print-report.php?type=salary" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
+                    </a>
+                </div>
+
+                <div style="flex: 1; min-width: 250px; border: 1px solid #f1f2f6; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;" onmouseover="this.style.borderColor='#ff4757'" onmouseout="this.style.borderColor='#f1f2f6'">
+                    <div>
+                        <strong style="display: block; color: #2f3542;">Dormitory Analysis</strong>
+                        <span style="font-size: 0.8rem; color: #a4b0be;">Sales summary by dorm</span>
+                    </div>
+                    <a href="print-report.php?type=dorm_stats" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
+                    </a>
+                </div>
+
+                <div style="flex: 1; min-width: 250px; border: 1px solid #f1f2f6; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;" onmouseover="this.style.borderColor='#ff4757'" onmouseout="this.style.borderColor='#f1f2f6'">
+                    <div>
+                        <strong style="display: block; color: #2f3542;">Staff Worklog</strong>
+                        <span style="font-size: 0.8rem; color: #a4b0be;">Worklog Summary</span>
+                    </div>
+                    <a href="print-report.php?type=worklog" target="_blank" style="background: #f1f2f6; padding: 10px; border-radius: 50%; text-decoration: none; display: flex; align-items: center; justify-content: center;">
                         <img src="https://cdn-icons-png.flaticon.com/512/724/724933.png" style="width: 20px;" alt="Download">
                     </a>
                 </div>
