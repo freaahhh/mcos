@@ -7,25 +7,32 @@ if (!isset($_SESSION['u_id'])) {
 }
 
 $customer_id = $_SESSION['u_id'];
-$orders = []; // Initialize as empty array
-$sn = 1;      // Initialize serial number
+$orders = [];
+$sn = 1;
 
-
-
-//Fetch Orders + Delivery Status (Use LEFT JOIN)
-
+// --- UPDATED SQL QUERY ---
 $sql = "SELECT o.ORDER_ID, 
-               TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED, 
-               o.DELIVERY_CHARGE, 
+               c.CUST_USERNAME, 
                o.GRAND_TOTAL, 
-               d.DELIVERY_STATUS
+               o.DELIVERY_CHARGE,
+               TO_CHAR(o.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS ORDER_DATE_FORMATTED, -- Needed for display
+               
+               CASE 
+                   WHEN p.PAYMENT_STATUS = 'Verified' AND d.DELIVERY_STATUS = 'Delivered' THEN 'COMPLETED' 
+                   WHEN p.PAYMENT_STATUS = 'Verified' AND d.DELIVERY_STATUS = 'Ordered' THEN 'AWAITING DELIVERY' 
+                   WHEN p.PAYMENT_STATUS = 'Verified' AND d.DELIVERY_STATUS = 'On Delivery' THEN 'IN TRANSIT' 
+                   WHEN p.PAYMENT_STATUS = 'Failed' THEN 'CANCELLED' 
+                   ELSE 'PROCESSING' 
+               END AS CURRENT_ORDER_STATUS
+
         FROM ORDERS o
+        JOIN CUSTOMER c ON o.CUST_ID = c.CUST_ID
+        LEFT JOIN PAYMENT p ON o.ORDER_ID = p.ORDER_ID 
         LEFT JOIN DELIVERY d ON o.ORDER_ID = d.ORDER_ID
         WHERE o.CUST_ID = :customer_id 
         ORDER BY o.ORDER_ID DESC";
 
 $stid = oci_parse($conn, $sql);
-
 oci_bind_by_name($stid, ':customer_id', $customer_id);
 
 if (oci_execute($stid)) {
@@ -53,7 +60,7 @@ oci_free_statement($stid);
                         <th style="padding: 15px;">Order ID</th>
                         <th style="padding: 15px;">Date</th>
                         <th style="padding: 15px;">Total (RM)</th>
-                        <th style="padding: 15px;">Status</th>
+                        <th style="padding: 15px;">Live Status</th>
                         <th style="padding: 15px;">Action</th>
                     </tr>
                 </thead>
@@ -64,13 +71,27 @@ oci_free_statement($stid);
                             $order_id = $row['ORDER_ID'];
                             $order_date = date('d M Y, H:i', strtotime($row['ORDER_DATE_FORMATTED']));
                             $total = $row['GRAND_TOTAL'];
-                            $db_status = isset($row['DELIVERY_STATUS']) ? trim($row['DELIVERY_STATUS']) : null;
 
-                            if (empty($db_status)) {
-                                $display_status = "Processing";
-                            } else {
-                                $display_status = $db_status;
+                            // Get the status from your Query Logic
+                            $status = $row['CURRENT_ORDER_STATUS'];
+
+                            // --- COLOR LOGIC (Updated to match your terms) ---
+                            $badge_bg = '#57606f'; // Default Grey (Processing)
+
+                            if ($status == 'COMPLETED') {
+                                $badge_bg = '#2ecc71'; // Green
+                            } elseif ($status == 'IN TRANSIT') {
+                                $badge_bg = '#3498db'; // Blue
+                            } elseif ($status == 'AWAITING DELIVERY') {
+                                $badge_bg = '#f39c12'; // Orange (Was 'Preparing')
+                            } elseif ($status == 'CANCELLED') {
+                                $badge_bg = '#e74c3c'; // Red
                             }
+                            /*
+                            } elseif ($status == 'PENDING PAYMENT') {
+                                $badge_bg = '#e74c3c'; // Red
+                            }
+                            */
                     ?>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td style="padding: 15px;"><?php echo $sn++; ?>.</td>
@@ -81,21 +102,21 @@ oci_free_statement($stid);
                                 <td style="padding: 15px;">
                                     <?php echo number_format($total, 2); ?>
                                 </td>
-                                <td style="padding: 15px;">
-                                    <?php
-                                    $check_status = strtoupper($display_status);
 
-                                    if ($check_status == "DELIVERED") {
-                                        echo "<span style='background: #2ecc71; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold;'>Delivered</span>";
-                                    } elseif ($check_status == "ON DELIVERY" || $check_status == "OUT FOR DELIVERY") {
-                                        echo "<span style='background: #e67e22; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold;'>On Delivery</span>";
-                                    } elseif ($check_status == "CANCELLED") {
-                                        echo "<span style='background: #ff4757; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold;'>Cancelled</span>";
-                                    } else {
-                                        echo "<span style='background: #57606f; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold;'>Processing</span>";
-                                    }
-                                    ?>
+                                <td style="padding: 15px;">
+                                    <span style="background: <?php echo $badge_bg; ?>; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; font-weight:bold; color: white; display: inline-block;">
+                                        <?php echo $status; ?>
+                                    </span>
+
+                                    <!-- Remove Pending Payment because once the customer submit payment, they are not allowed to edit it. They must make a new order.
+                                    <?php if ($status == 'PENDING PAYMENT'): ?>
+                                        <div style="margin-top: 5px;">
+                                            <a href="payment.php?order_id=<?php echo $order_id; ?>" style="font-size: 0.75rem; color: #e74c3c; text-decoration: none; border-bottom: 1px dotted #e74c3c;">Pay Now &rarr;</a>
+                                        </div>
+                                    <?php endif; ?>
+                                    -->
                                 </td>
+
                                 <td style="padding: 15px;">
                                     <a href="<?php echo SITEURL; ?>order-details.php?id=<?php echo $order_id; ?>"
                                         style="color: #3498db; text-decoration: none; font-weight: bold; border: 1px solid #3498db; padding: 5px 12px; border-radius: 5px; transition: 0.3s;">
